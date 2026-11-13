@@ -53,19 +53,37 @@ tr.paid input.nm{text-decoration:line-through}
 @media(max-width:640px){.add{grid-template-columns:1fr 1fr}}
 .seg button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
 .foot{color:var(--mut);font-size:12px;text-align:center}
+.tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto}
+.tabs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.add4{grid-template-columns:130px 1fr 110px auto}
+.dad{display:grid;grid-template-columns:1fr 130px 110px 140px auto;gap:6px}
+@media(max-width:640px){.add4{grid-template-columns:1fr 1fr}.dad{grid-template-columns:1fr 1fr}}
+.dc{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:10px}
+.dc.done{opacity:.55}
+.dr{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.dr label{font-size:12px;color:var(--mut)}
+.dr input,.dr select{width:auto;min-width:0}
+.dc .nm{font-weight:600;flex:1;min-width:120px}
+.dc .pa{width:110px}
+.neg{color:var(--bad)}.pos{color:var(--ok)}
+details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
+.pl{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:3px 0;border-top:1px solid var(--bd)}
+.pl button{border:none;background:none;color:var(--mut);padding:0 4px}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
   <h1>💶 Prospetto spese</h1>
-  <div class="bar">
+  <div class="bar" id="mnav">
     <button id="prev" title="Mese precedente">‹</button>
     <select id="mon"></select>
     <button id="next" title="Mese successivo">›</button>
     <button id="newm" class="pri" title="Crea il mese successivo copiando le voci">＋ Nuovo mese</button>
   </div>
 </header>
+<nav class="tabs" id="tabs"><button data-t="m" class="on">Mensile</button><button data-t="a">Annuali</button><button data-t="d">Debiti e crediti</button></nav>
+<div id="v-m">
 
 <div class="cards" id="cards"></div>
 
@@ -92,6 +110,31 @@ tr.paid input.nm{text-decoration:line-through}
 </table>
 </div>
 
+</div>
+
+<div id="v-a" style="display:none">
+  <div class="bar" style="justify-content:center;margin-bottom:12px"><button id="ay-p">‹</button><b id="ay" style="font-size:18px"></b><button id="ay-n">›</button></div>
+  <div class="cards" id="acards"></div>
+  <div class="panel"><div class="add add4">
+    <input type="date" id="aa-d"><input type="text" id="aa-n" placeholder="Nuova scadenza annuale (es. Bollo auto)"><input type="number" id="aa-a" step="0.01" min="0" placeholder="Importo €"><button id="aa-b" class="pri">Aggiungi</button>
+  </div><p class="foot" style="margin:6px 0 0">Conta solo giorno e mese: la scadenza si ripete ogni anno e lo stato “pagato” è separato per anno.</p></div>
+  <div class="panel tw"><table style="min-width:520px">
+    <thead><tr><th style="width:130px">Scadenza</th><th>Oggetto</th><th style="width:110px;text-align:right">Importo</th><th style="width:100px">Stato</th><th style="width:44px">Pagato</th><th style="width:34px"></th></tr></thead>
+    <tbody id="arows"></tbody></table></div>
+</div>
+
+<div id="v-d" style="display:none">
+  <div class="cards" id="dcards"></div>
+  <div class="panel"><div class="dad">
+    <input type="text" id="dd-w" placeholder="Persona / ente">
+    <select id="dd-t"><option value="d">Devo io</option><option value="c">Mi devono</option></select>
+    <input type="number" id="dd-a" step="0.01" min="0" placeholder="Totale €">
+    <input type="date" id="dd-d" title="Scadenza (facoltativa)">
+    <button id="dd-b" class="pri">Aggiungi</button>
+  </div></div>
+  <div id="dlist"></div>
+</div>
+
 <div class="bar" style="justify-content:center;margin-bottom:10px">
   <button id="exp">⬇ Esporta backup</button>
   <button id="imp">⬆ Importa backup</button>
@@ -115,6 +158,7 @@ const mk=(k,L)=>L.map(([d,n,a,s,p])=>({id:uid(),date:k+'-'+pad(d),name:n,amount:
 if(!S||!S.months)S={cur:'2026-11',months:{}};
 if(!S.months['2026-11'])S.months['2026-11']=mk('2026-11',SEED11);
 if(!S.months['2026-12'])S.months['2026-12']=mk('2026-12',SEED);
+S.annual=S.annual||[];S.debts=S.debts||[];
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const $=id=>document.getElementById(id);
 const monthLabel=k=>{const[y,m]=k.split('-');const s=new Date(+y,m-1,1).toLocaleDateString('it-IT',{month:'long',year:'numeric'});return s[0].toUpperCase()+s.slice(1)};
@@ -155,7 +199,7 @@ function render(){
       <td>${c}</td>
       <td class="ck"><input type="checkbox" data-k="paid"${i.paid?' checked':''}></td>
       <td class="x"><button data-del title="Elimina">✕</button></td></tr>`}).join('')||'<tr><td colspan="7" style="color:var(--mut);text-align:center;padding:18px">Nessuna voce</td></tr>';
-  save();
+  rA();rD();save();
 }
 
 $('rows').addEventListener('change',e=>{
@@ -201,9 +245,106 @@ $('file').onchange=e=>{
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
   r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.months||!d.cur)throw 0;
-    if(confirm('Sostituire i dati attuali con il backup?')){S=d;render()}}catch(x){alert('File non valido')}};
+    if(confirm('Sostituire i dati attuali con il backup?')){S=d;S.annual=S.annual||[];S.debts=S.debts||[];render()}}catch(x){alert('File non valido')}};
   r.readAsText(f);e.target.value='';
 };
+
+const tdy=()=>{const t=new Date();return t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate())};
+let ay=new Date().getFullYear();
+function setTab(t){['m','a','d'].forEach(k=>{$('v-'+k).style.display=k===t?'':'none'});$('mnav').style.display=t==='m'?'':'none';document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t))}
+$('tabs').onclick=e=>{if(e.target.dataset.t)setTab(e.target.dataset.t)};
+const fd=d=>new Date(d).toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'});
+
+/* ---- Scadenze annuali ---- */
+const adate=(a,y)=>y+'-'+pad(a.m)+'-'+pad(Math.min(a.d,new Date(y,a.m,0).getDate()));
+function chip(p,amt,dt,t){if(p)return '<span class="chip okc">Pagato</span>';if(!(amt>0))return '';const d=Math.round((new Date(dt)-new Date(t))/864e5);return d<0?'<span class="chip late">Scaduto</span>':d<=7?'<span class="chip soon">'+(d===0?'Oggi':'tra '+d+' gg')+'</span>':''}
+function rA(){
+  $('ay').textContent=ay;const t=tdy();
+  const L=S.annual.map(a=>({a,dt:adate(a,ay),p:!!(a.paid&&a.paid[ay])})).sort((x,y)=>x.dt.localeCompare(y.dt)||x.a.name.localeCompare(y.a.name));
+  const sm=f=>r2(L.filter(f).reduce((s,x)=>s+(+x.a.amount||0),0));
+  const tot=sm(()=>1),pd=sm(x=>x.p),left=r2(tot-pd),late=sm(x=>!x.p&&x.dt<t),n=L.filter(x=>!x.p&&x.a.amount>0).length;
+  const nx=L.find(x=>!x.p&&x.a.amount>0&&x.dt>=t);
+  $('acards').innerHTML=`<div class="card"><small>Totale ${ay}</small><b>${eur(tot)}</b><span class="s">${L.length} scadenze</span></div>
+   <div class="card"><small>Già pagato</small><b style="color:var(--ok)">${eur(pd)}</b></div>
+   <div class="card hl"><small>Resta da pagare</small><b>${eur(left)}</b><span class="s">${n} scadenze${late>0?` · <span class="neg">${eur(late)} scaduti</span>`:''}</span></div>
+   <div class="card"><small>Da accantonare al mese</small><b>${eur(tot/12)}</b><span class="s">totale annuo ÷ 12</span></div>
+   <div class="card"><small>Prossima scadenza</small><b style="font-size:16px">${nx?esc(nx.a.name):'—'}</b><span class="s">${nx?new Date(nx.dt).toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+eur(nx.a.amount):'nessuna'}</span></div>`;
+  $('arows').innerHTML=L.map(({a,dt,p})=>`<tr data-id="${a.id}" class="${p?'paid':''}">
+    <td><input type="date" data-k="date" value="${dt}"></td>
+    <td><input class="nm" data-k="name" value="${esc(a.name)}"></td>
+    <td class="n"><input type="number" step="0.01" min="0" data-k="amount" value="${a.amount}"></td>
+    <td>${chip(p,a.amount,dt,t)}</td>
+    <td class="ck"><input type="checkbox" data-k="paid"${p?' checked':''}></td>
+    <td class="x"><button data-del title="Elimina">✕</button></td></tr>`).join('')||'<tr><td colspan="6" style="color:var(--mut);text-align:center;padding:18px">Nessuna scadenza annuale: aggiungi la prima qui sopra</td></tr>';
+}
+$('ay-p').onclick=()=>{ay--;rA()};$('ay-n').onclick=()=>{ay++;rA()};
+$('aa-d').value=ay+'-01-01';
+$('aa-b').onclick=()=>{
+  const n=$('aa-n').value.trim();if(!n){$('aa-n').focus();return}
+  const v=$('aa-d').value||ay+'-01-01';
+  S.annual.push({id:uid(),name:n,m:+v.slice(5,7),d:+v.slice(8,10),amount:parseFloat($('aa-a').value)||0,paid:{}});
+  $('aa-n').value='';$('aa-a').value='';render();
+};
+$('arows').addEventListener('change',e=>{
+  const tr=e.target.closest('tr'),k=e.target.dataset.k;if(!tr||!k)return;
+  const a=S.annual.find(x=>x.id===tr.dataset.id);if(!a)return;
+  if(k==='paid'){a.paid=a.paid||{};a.paid[ay]=e.target.checked}
+  else if(k==='date'){const v=e.target.value;if(v){a.m=+v.slice(5,7);a.d=+v.slice(8,10)}}
+  else a[k]=k==='amount'?(parseFloat(e.target.value)||0):e.target.value;
+  render();
+});
+$('arows').addEventListener('click',e=>{
+  if(!e.target.closest('[data-del]'))return;
+  const id=e.target.closest('tr').dataset.id,a=S.annual.find(x=>x.id===id);
+  if(confirm('Eliminare “'+a.name+'” da tutti gli anni?')){S.annual=S.annual.filter(x=>x.id!==id);render()}
+});
+
+/* ---- Debiti e crediti ---- */
+const paidOf=x=>r2(x.pay.reduce((s,p)=>s+p.a,0)),remOf=x=>r2(x.total-paidOf(x));
+function rD(){
+  const t=tdy(),open=S.debts.filter(x=>remOf(x)>0.004);
+  const sd=r2(open.filter(x=>x.dir==='d').reduce((s,x)=>s+remOf(x),0)),sc=r2(open.filter(x=>x.dir==='c').reduce((s,x)=>s+remOf(x),0));
+  const net=r2(sc-sd);
+  $('dcards').innerHTML=`<div class="card hl"><small>Devo ancora</small><b class="neg">${eur(sd)}</b><span class="s">${open.filter(x=>x.dir==='d').length} debiti aperti</span></div>
+   <div class="card hl"><small>Mi devono ancora</small><b class="pos">${eur(sc)}</b><span class="s">${open.filter(x=>x.dir==='c').length} crediti aperti</span></div>
+   <div class="card"><small>Saldo netto</small><b class="${net>=0?'pos':'neg'}">${eur(net)}</b><span class="s">${net>=0?'a tuo favore':'a tuo carico'}</span></div>`;
+  const L=[...S.debts].sort((a,b)=>(remOf(a)<=0.004)-(remOf(b)<=0.004)||a.dir.localeCompare(b.dir)||remOf(b)-remOf(a));
+  $('dlist').innerHTML=L.map(x=>{
+    const rem=remOf(x),pd=paidOf(x),done=rem<=0.004,pct=x.total>0?Math.min(100,Math.round(pd/x.total*100)):0,deb=x.dir==='d';
+    const late=!done&&x.due&&x.due<t;
+    return `<div class="dc${done?' done':''}" data-id="${x.id}">
+      <div class="dr" style="margin:0"><input class="nm" data-k="who" value="${esc(x.who)}">
+        <select data-k="dir"><option value="d"${deb?' selected':''}>Devo io</option><option value="c"${deb?'':' selected'}>Mi devono</option></select>
+        ${done?'<span class="chip okc">Saldato</span>':late?'<span class="chip late">Scaduto</span>':''}
+        <button data-del title="Elimina" style="border:none;background:none;color:var(--mut)">✕</button></div>
+      <div class="prog"><i style="width:${pct}%"></i></div>
+      <div class="s" style="font-size:13px;margin-top:4px">${deb?'Restituito':'Incassato'} <b>${eur(pd)}</b> di ${eur(x.total)} · resta <b class="${deb?'neg':'pos'}">${eur(Math.max(rem,0))}</b></div>
+      <div class="dr"><label>Totale</label><input type="number" step="0.01" min="0" data-k="total" value="${x.total}" style="width:100px">
+        <label>Scadenza</label><input type="date" data-k="due" value="${x.due||''}">
+        <input data-k="note" placeholder="nota" value="${esc(x.note)}" style="flex:1;min-width:100px"></div>
+      ${done?'':`<div class="dr"><input type="number" class="pa" step="0.01" min="0" placeholder="Importo €"><button data-addp class="pri">${deb?'Registra pagamento':'Registra incasso'}</button><button data-all>Salda tutto</button></div>`}
+      ${x.pay.length?`<details><summary>Movimenti (${x.pay.length})</summary>${x.pay.map(p=>`<div class="pl" data-pid="${p.id}"><span>${fd(p.date)}</span><span>${eur(p.a)}<button data-delp title="Elimina">✕</button></span></div>`).join('')}</details>`:''}
+    </div>`}).join('')||'<p class="foot" style="padding:18px">Nessun debito o credito: aggiungine uno qui sopra</p>';
+}
+$('dd-b').onclick=()=>{
+  const w=$('dd-w').value.trim();if(!w){$('dd-w').focus();return}
+  S.debts.push({id:uid(),who:w,dir:$('dd-t').value,total:parseFloat($('dd-a').value)||0,due:$('dd-d').value,note:'',pay:[]});
+  $('dd-w').value='';$('dd-a').value='';$('dd-d').value='';render();
+};
+$('dlist').addEventListener('change',e=>{
+  const c=e.target.closest('.dc'),k=e.target.dataset.k;if(!c||!k)return;
+  const x=S.debts.find(y=>y.id===c.dataset.id);if(!x)return;
+  x[k]=k==='total'?(parseFloat(e.target.value)||0):e.target.value;render();
+});
+$('dlist').addEventListener('click',e=>{
+  const c=e.target.closest('.dc');if(!c)return;
+  const x=S.debts.find(y=>y.id===c.dataset.id),T=e.target;if(!x)return;
+  if(T.closest('[data-del]')){if(confirm('Eliminare “'+x.who+'” con tutti i movimenti?')){S.debts=S.debts.filter(y=>y!==x);render()}}
+  else if(T.closest('[data-delp]')){const id=T.closest('.pl').dataset.pid;x.pay=x.pay.filter(p=>p.id!==id);render()}
+  else if(T.closest('[data-addp]')){const v=parseFloat(c.querySelector('.pa').value);if(v>0){x.pay.push({id:uid(),date:tdy(),a:v});render()}else c.querySelector('.pa').focus()}
+  else if(T.closest('[data-all]')){const r=remOf(x);if(r>0){x.pay.push({id:uid(),date:tdy(),a:r});render()}}
+});
+setTab('m');
 render();
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
