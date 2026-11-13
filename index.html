@@ -70,6 +70,7 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
 .pl{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:3px 0;border-top:1px solid var(--bd)}
 .dg{margin-bottom:12px}
 .dg>summary.gh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 2px;font-size:15px;color:var(--tx);margin-top:0}
+.gh button{padding:2px 8px;font-size:12px;margin-left:auto}
 .pl button{border:none;background:none;color:var(--mut);padding:0 4px}
 </style>
 </head>
@@ -84,7 +85,14 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
     <button id="newm" class="pri" title="Crea il mese successivo copiando le voci">＋ Nuovo mese</button>
   </div>
 </header>
-<nav class="tabs" id="tabs"><button data-t="m" class="on">Mensile</button><button data-t="a">Annuali</button><button data-t="d">Debiti e crediti</button></nav>
+<nav class="tabs" id="tabs"><button data-t="m" class="on">Mensile</button><button data-t="a">Annuali</button><button data-t="d">Debiti e crediti</button><button id="syncb" title="Sincronizzazione con GitHub">☁ Sync</button><span id="sst" class="s" style="align-self:center;white-space:nowrap"></span></nav>
+<div class="panel" id="synp" style="display:none">
+  <b>Sincronizzazione con GitHub</b>
+  <p class="foot" style="text-align:left;margin:4px 0">Usa un repository <b>privato</b> e un token fine-grained limitato a quel solo repository (permesso Contents: Read and write). Il token resta solo in questo browser e non finisce nel backup.</p>
+  <div class="dr"><input id="sy-r" placeholder="utente/repository" style="flex:1;min-width:160px"><input id="sy-p" placeholder="file" value="prospetto-spese.json" style="flex:1;min-width:140px"><input id="sy-b" placeholder="branch" value="main" style="width:90px"></div>
+  <div class="dr"><input id="sy-t" type="password" placeholder="Token (github_pat_...)" autocomplete="off" style="flex:1;min-width:220px"></div>
+  <div class="dr"><button id="sy-s" class="pri">Salva e sincronizza</button><button id="sy-n">Sincronizza ora</button><button id="sy-x">Disattiva</button></div>
+</div>
 <div id="v-m">
 
 <div class="cards" id="cards"></div>
@@ -162,7 +170,7 @@ if(!S||!S.months)S={cur:'2026-11',months:{}};
 if(!S.months['2026-11'])S.months['2026-11']=mk('2026-11',SEED11);
 if(!S.months['2026-12'])S.months['2026-12']=mk('2026-12',SEED);
 S.annual=S.annual||[];S.debts=S.debts||[];
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};schedPush()};
 const $=id=>document.getElementById(id);
 const monthLabel=k=>{const[y,m]=k.split('-');const s=new Date(+y,m-1,1).toLocaleDateString('it-IT',{month:'long',year:'numeric'});return s[0].toUpperCase()+s.slice(1)};
 const items=()=>S.months[S.cur];
@@ -303,42 +311,44 @@ $('arows').addEventListener('click',e=>{
 });
 
 /* ---- Debiti e crediti ---- */
-const paidOf=x=>r2(x.pay.reduce((s,p)=>s+p.a,0)),remOf=x=>r2(x.total-paidOf(x));
-const gclosed=new Set();
+const paidOf=x=>r2(x.pay.reduce((a,p)=>a+p.a,0)),remOf=x=>r2(x.total-paidOf(x));
+const gclosed=new Set(),gk=w=>String(w||'').trim().toLowerCase(),isOpen=x=>remOf(x)>0.004;
+const dRow=(x,t)=>{
+  const rem=remOf(x),pd=paidOf(x),done=!isOpen(x),pct=x.total>0?Math.min(100,Math.round(pd/x.total*100)):0,deb=x.dir==='d',late=!done&&x.due&&x.due<t;
+  return `<div class="dc${done?' done':''}" data-id="${x.id}">
+    <div class="dr" style="margin:0"><input type="date" data-k="date" value="${x.date||''}" title="Data del movimento">
+      <input class="nm" data-k="note" placeholder="descrizione" value="${esc(x.note)}">
+      <select data-k="dir"><option value="d"${deb?' selected':''}>Devo io</option><option value="c"${deb?'':' selected'}>Mi devono</option></select>
+      <input type="number" step="0.01" min="0" data-k="total" value="${x.total}" style="width:90px">
+      ${done?'<span class="chip okc">Saldato</span>':late?'<span class="chip late">Scaduto</span>':''}
+      <button data-del title="Elimina" style="border:none;background:none;color:var(--mut)">✕</button></div>
+    <div class="prog"><i style="width:${pct}%"></i></div>
+    <div class="s" style="font-size:13px;margin-top:4px">${deb?'Restituito':'Incassato'} <b>${eur(pd)}</b> di ${eur(x.total)} · resta <b class="${deb?'neg':'pos'}">${eur(Math.max(rem,0))}</b> · scadenza <input type="date" data-k="due" value="${x.due||''}" style="padding:2px 4px;font-size:12px;width:auto"></div>
+    ${done?'':`<div class="dr"><input type="number" class="pa" step="0.01" min="0" placeholder="Importo €"><button data-addp class="pri">${deb?'Registra pagamento':'Registra incasso'}</button><button data-all>Salda tutto</button></div>`}
+    ${x.pay.length?`<details><summary>Movimenti (${x.pay.length})</summary>${x.pay.map(p=>`<div class="pl" data-pid="${p.id}"><span>${fd(p.date)}</span><span>${eur(p.a)}<button data-delp title="Elimina">✕</button></span></div>`).join('')}</details>`:''}
+  </div>`};
 function rD(){
-  const t=tdy(),open=S.debts.filter(x=>remOf(x)>0.004);
-  const sd=r2(open.filter(x=>x.dir==='d').reduce((s,x)=>s+remOf(x),0)),sc=r2(open.filter(x=>x.dir==='c').reduce((s,x)=>s+remOf(x),0));
-  const net=r2(sc-sd);
-  $('dcards').innerHTML=`<div class="card hl"><small>Devo ancora</small><b class="neg">${eur(sd)}</b><span class="s">${open.filter(x=>x.dir==='d').length} debiti aperti</span></div>
-   <div class="card hl"><small>Mi devono ancora</small><b class="pos">${eur(sc)}</b><span class="s">${open.filter(x=>x.dir==='c').length} crediti aperti</span></div>
+  const t=tdy(),op=S.debts.filter(isOpen);
+  const sd=r2(op.filter(x=>x.dir==='d').reduce((a,x)=>a+remOf(x),0)),sc=r2(op.filter(x=>x.dir==='c').reduce((a,x)=>a+remOf(x),0)),net=r2(sc-sd);
+  $('dcards').innerHTML=`<div class="card hl"><small>Devo ancora</small><b class="neg">${eur(sd)}</b><span class="s">${op.filter(x=>x.dir==='d').length} debiti aperti</span></div>
+   <div class="card hl"><small>Mi devono ancora</small><b class="pos">${eur(sc)}</b><span class="s">${op.filter(x=>x.dir==='c').length} crediti aperti</span></div>
    <div class="card"><small>Saldo netto</small><b class="${net>=0?'pos':'neg'}">${eur(net)}</b><span class="s">${net>=0?'a tuo favore':'a tuo carico'}</span></div>`;
-  const L=[...S.debts].sort((a,b)=>(remOf(a)<=0.004)-(remOf(b)<=0.004)||a.dir.localeCompare(b.dir)||remOf(b)-remOf(a));
-  const dRow=x=>{
-    const rem=remOf(x),pd=paidOf(x),done=rem<=0.004,pct=x.total>0?Math.min(100,Math.round(pd/x.total*100)):0,deb=x.dir==='d';
-    const late=!done&&x.due&&x.due<t;
-    return `<div class="dc${done?' done':''}" data-id="${x.id}">
-      <div class="dr" style="margin:0"><input class="nm" data-k="who" list="dwho" value="${esc(x.who)}">
-        <select data-k="dir"><option value="d"${deb?' selected':''}>Devo io</option><option value="c"${deb?'':' selected'}>Mi devono</option></select>
-        ${done?'<span class="chip okc">Saldato</span>':late?'<span class="chip late">Scaduto</span>':''}
-        <button data-del title="Elimina" style="border:none;background:none;color:var(--mut)">✕</button></div>
-      <div class="prog"><i style="width:${pct}%"></i></div>
-      <div class="s" style="font-size:13px;margin-top:4px">${deb?'Restituito':'Incassato'} <b>${eur(pd)}</b> di ${eur(x.total)} · resta <b class="${deb?'neg':'pos'}">${eur(Math.max(rem,0))}</b></div>
-      <div class="dr"><label>Totale</label><input type="number" step="0.01" min="0" data-k="total" value="${x.total}" style="width:100px">
-        <label>Scadenza</label><input type="date" data-k="due" value="${x.due||''}">
-        <input data-k="note" placeholder="nota" value="${esc(x.note)}" style="flex:1;min-width:100px"></div>
-      ${done?'':`<div class="dr"><input type="number" class="pa" step="0.01" min="0" placeholder="Importo €"><button data-addp class="pri">${deb?'Registra pagamento':'Registra incasso'}</button><button data-all>Salda tutto</button></div>`}
-      ${x.pay.length?`<details><summary>Movimenti (${x.pay.length})</summary>${x.pay.map(p=>`<div class="pl" data-pid="${p.id}"><span>${fd(p.date)}</span><span>${eur(p.a)}<button data-delp title="Elimina">✕</button></span></div>`).join('')}</details>`:''}
-    </div>`};
   const G=new Map();
-  L.forEach(x=>{const k=x.who.trim().toLowerCase();if(!G.has(k))G.set(k,{k,name:x.who.trim()||'(senza nome)',rows:[]});G.get(k).rows.push(x)});
-  const gs=[...G.values()].map(g=>{const o=g.rows.filter(x=>remOf(x)>0.004);g.d=r2(o.filter(x=>x.dir==='d').reduce((a,x)=>a+remOf(x),0));g.c=r2(o.filter(x=>x.dir==='c').reduce((a,x)=>a+remOf(x),0));g.open=o.length;return g}).sort((a,b)=>(!a.open)-(!b.open)||(b.d+b.c)-(a.d+a.c)||a.name.localeCompare(b.name));
-  $('dwho').innerHTML=[...new Set(S.debts.map(x=>x.who.trim()).filter(Boolean))].map(n=>`<option value="${esc(n)}">`).join('');
-  $('dlist').innerHTML=gs.map(g=>`<details class="dg" data-g="${esc(g.k)}"${gclosed.has(g.k)?'':' open'}><summary class="gh"><b>${esc(g.name)}</b>${g.d>0?` <span class="chip late">Devo ${eur(g.d)}</span>`:''}${g.c>0?` <span class="chip okc">Mi devono ${eur(g.c)}</span>`:''}${g.d>0&&g.c>0?` <span class="s">netto ${eur(g.c-g.d)}</span>`:''}${g.open?'':' <span class="chip okc">Saldato</span>'}<span class="s"> · ${g.rows.length} ${g.rows.length===1?'riga':'righe'}</span></summary>${g.rows.map(dRow).join('')}</details>`).join('')||'<p class="foot" style="padding:18px">Nessun debito o credito: aggiungine uno qui sopra</p>';
+  S.debts.forEach(x=>{const k=gk(x.who);if(!G.has(k))G.set(k,{k,name:String(x.who||'').trim()||'(senza nome)',rows:[]});G.get(k).rows.push(x)});
+  const gs=[...G.values()].map(g=>{
+    g.rows.sort((a,b)=>(!isOpen(a))-(!isOpen(b))||(a.date||'').localeCompare(b.date||''));
+    const o=g.rows.filter(isOpen);g.d=r2(o.filter(x=>x.dir==='d').reduce((a,x)=>a+remOf(x),0));g.c=r2(o.filter(x=>x.dir==='c').reduce((a,x)=>a+remOf(x),0));g.open=o.length;return g
+  }).sort((a,b)=>(!a.open)-(!b.open)||(b.d+b.c)-(a.d+a.c)||a.name.localeCompare(b.name));
+  $('dwho').innerHTML=gs.map(g=>`<option value="${esc(g.name)}">`).join('');
+  $('dlist').innerHTML=gs.map(g=>`<details class="dg" data-g="${esc(g.k)}" data-n="${esc(g.name)}"${gclosed.has(g.k)?'':' open'}><summary class="gh"><b>${esc(g.name)}</b>${g.c>0?` <span class="chip okc">Mi deve ${eur(g.c)}</span>`:''}${g.d>0?` <span class="chip late">Devo ${eur(g.d)}</span>`:''}${g.d>0&&g.c>0?` <span class="s">netto ${eur(g.c-g.d)}</span>`:''}${g.open?'':' <span class="chip okc">Saldato</span>'}<span class="s"> · ${g.rows.length} ${g.rows.length===1?'movimento':'movimenti'}</span><button data-ren title="Rinomina persona">✎</button></summary>
+    ${g.rows.map(x=>dRow(x,t)).join('')}
+    <div class="dr" style="margin:0 0 4px 0"><input class="ga" type="number" step="0.01" min="0" placeholder="Importo €" style="width:110px"><input class="gn" placeholder="Descrizione" style="flex:1;min-width:120px"><select class="gd"><option value="c"${g.d>0&&g.c<=0?'':' selected'}>Mi deve</option><option value="d"${g.d>0&&g.c<=0?' selected':''}>Devo io</option></select><button data-gadd>＋ Movimento</button></div>
+  </details>`).join('')||'<p class="foot" style="padding:18px">Nessun debito o credito: aggiungine uno qui sopra</p>';
 }
 $('dlist').addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.g!==undefined){d.open?gclosed.delete(d.dataset.g):gclosed.add(d.dataset.g)}},true);
 $('dd-b').onclick=()=>{
   const w=$('dd-w').value.trim();if(!w){$('dd-w').focus();return}
-  S.debts.push({id:uid(),who:w,dir:$('dd-t').value,total:parseFloat($('dd-a').value)||0,due:$('dd-d').value,note:'',pay:[]});
+  S.debts.push({id:uid(),who:w,dir:$('dd-t').value,total:parseFloat($('dd-a').value)||0,due:$('dd-d').value,date:tdy(),note:'',pay:[]});
   $('dd-w').value='';$('dd-a').value='';$('dd-d').value='';render();
 };
 $('dlist').addEventListener('change',e=>{
@@ -347,13 +357,70 @@ $('dlist').addEventListener('change',e=>{
   x[k]=k==='total'?(parseFloat(e.target.value)||0):e.target.value;render();
 });
 $('dlist').addEventListener('click',e=>{
-  const c=e.target.closest('.dc');if(!c)return;
-  const x=S.debts.find(y=>y.id===c.dataset.id),T=e.target;if(!x)return;
-  if(T.closest('[data-del]')){if(confirm('Eliminare “'+x.who+'” con tutti i movimenti?')){S.debts=S.debts.filter(y=>y!==x);render()}}
+  const T=e.target,dg=T.closest('.dg');if(!dg)return;
+  if(T.closest('[data-ren]')){e.preventDefault();const n=prompt('Nuovo nome della persona',dg.dataset.n);
+    if(n&&n.trim()){S.debts.filter(x=>gk(x.who)===dg.dataset.g).forEach(x=>x.who=n.trim());render()}return}
+  if(T.closest('[data-gadd]')){const v=parseFloat(dg.querySelector('.ga').value);
+    if(v>0){S.debts.push({id:uid(),who:dg.dataset.n,dir:dg.querySelector('.gd').value,total:v,due:'',date:tdy(),note:dg.querySelector('.gn').value.trim(),pay:[]});render()}else dg.querySelector('.ga').focus();return}
+  const c=T.closest('.dc');if(!c)return;
+  const x=S.debts.find(y=>y.id===c.dataset.id);if(!x)return;
+  if(T.closest('[data-del]')){if(confirm('Eliminare questo movimento con tutti i pagamenti?')){S.debts=S.debts.filter(y=>y!==x);render()}}
   else if(T.closest('[data-delp]')){const id=T.closest('.pl').dataset.pid;x.pay=x.pay.filter(p=>p.id!==id);render()}
   else if(T.closest('[data-addp]')){const v=parseFloat(c.querySelector('.pa').value);if(v>0){x.pay.push({id:uid(),date:tdy(),a:v});render()}else c.querySelector('.pa').focus()}
   else if(T.closest('[data-all]')){const r=remOf(x);if(r>0){x.pay.push({id:uid(),date:tdy(),a:r});render()}}
 });
+
+/* ---- Sincronizzazione GitHub (file JSON in repository privato) ---- */
+const SK='prospetto-spese-sync';
+let C={};try{C=JSON.parse(localStorage.getItem(SK))||{}}catch(e){}
+const svC=()=>{try{localStorage.setItem(SK,JSON.stringify(C))}catch(e){}};
+const b64e=x=>btoa(unescape(encodeURIComponent(x))),b64d=x=>decodeURIComponent(escape(atob(x.replace(/\s/g,''))));
+const stt=m=>{$('sst').textContent=m};
+const pk=()=>{const{cur,...r}=S;return JSON.stringify(r)};
+let busy=false,tmr=null;
+function schedPush(){if(C.repo&&C.tok){clearTimeout(tmr);tmr=setTimeout(syncNow,1500)}}
+const api=(m,body)=>fetch('https://api.github.com/repos/'+C.repo+'/contents/'+C.path.split('/').map(encodeURIComponent).join('/')+(m==='GET'?'?ref='+encodeURIComponent(C.br):''),{method:m,cache:'no-store',headers:{Authorization:'Bearer '+C.tok,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},body:body?JSON.stringify(body):undefined});
+async function syncNow(retry){
+  if(!C.repo||!C.tok||busy)return;busy=true;stt('☁ sincronizzo…');
+  try{
+    const r=await api('GET');let sha=null,remote=null;
+    if(r.status===200){const j=await r.json();sha=j.sha;remote=JSON.parse(b64d(j.content)).data}
+    else if(r.status===401||r.status===403)throw new Error('token non valido o senza permessi');
+    else if(r.status!==404)throw new Error('errore '+r.status);
+    const dirty=pk()!==C.snap;let useRemote=false;
+    if(remote&&sha!==C.sha){
+      if(!C.sha||dirty)useRemote=confirm(C.sha?'Ci sono modifiche sia su questo dispositivo sia altrove.\n\nOK = usa i dati del repository (perdi le modifiche locali)\nAnnulla = sovrascrivi il repository con i dati di questo dispositivo':'Nel repository ci sono già dei dati.\n\nOK = usa i dati del repository (sostituisce quelli di questo dispositivo)\nAnnulla = sovrascrivi il repository con i dati di questo dispositivo');
+      else useRemote=true;
+    }
+    if(useRemote){
+      const cur=S.cur;S=remote;S.annual=S.annual||[];S.debts=S.debts||[];
+      S.cur=S.months[cur]?cur:Object.keys(S.months).sort().pop();
+      C.sha=sha;C.snap=pk();svC();render();
+    }else if(!remote||dirty||sha!==C.sha){
+      const{cur,...data}=S;
+      const body={message:'Prospetto spese '+new Date().toISOString(),content:b64e(JSON.stringify({app:'prospetto-spese',saved:new Date().toISOString(),data},null,1)),branch:C.br};
+      if(sha)body.sha=sha;
+      const w=await api('PUT',body);
+      if(w.status===409||w.status===422){busy=false;if(!retry){setTimeout(()=>syncNow(true),800)}stt('☁ conflitto, riprovo…');return}
+      if(!w.ok)throw new Error(w.status===404?'repository o file non trovato':'errore '+w.status);
+      const j=await w.json();C.sha=j.content.sha;C.snap=pk();svC();
+    }
+    const t=new Date();stt('☁ sincronizzato '+pad(t.getHours())+':'+pad(t.getMinutes()));
+  }catch(err){stt('☁ '+(navigator.onLine?err.message:'offline'))}
+  busy=false;
+}
+$('syncb').onclick=()=>{const p=$('synp');p.style.display=p.style.display==='none'?'':'none';$('sy-r').value=C.repo||'';$('sy-p').value=C.path||'prospetto-spese.json';$('sy-b').value=C.br||'main';$('sy-t').value='';$('sy-t').placeholder=C.tok?'Token già salvato (lascia vuoto per mantenerlo)':'Token (github_pat_...)'};
+$('sy-s').onclick=()=>{
+  const repo=$('sy-r').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,''),path=$('sy-p').value.trim()||'prospetto-spese.json',br=$('sy-b').value.trim()||'main',tok=$('sy-t').value.trim()||C.tok;
+  if(!/^[^\/\s]+\/[^\/\s]+$/.test(repo)||!tok){alert('Inserisci repository (utente/repository) e token');return}
+  if(repo!==C.repo||path!==C.path||br!==C.br){C.sha=null;C.snap=null}
+  C.repo=repo;C.path=path;C.br=br;C.tok=tok;svC();$('synp').style.display='none';syncNow();
+};
+$('sy-n').onclick=()=>syncNow();
+$('sy-x').onclick=()=>{if(confirm('Disattivare la sincronizzazione su questo dispositivo? I dati locali restano.')){C={};svC();stt('');$('synp').style.display='none'}};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncNow()});
+addEventListener('online',()=>syncNow());
+if(C.repo&&C.tok)stt('☁ attivo');
 setTab('m');
 render();
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
