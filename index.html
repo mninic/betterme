@@ -49,7 +49,7 @@ tr.paid input.nm{text-decoration:line-through}
 .okc{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
 .ck input{width:20px;height:20px;accent-color:var(--ok)}
 .x button{border:none;background:none;color:var(--mut);padding:2px 6px}
-.add{display:grid;grid-template-columns:130px 1fr 110px 150px auto;gap:6px}
+.add{display:grid;grid-template-columns:130px 1fr 110px 150px 80px auto;gap:6px}
 @media(max-width:640px){.add{grid-template-columns:1fr 1fr}}
 .seg button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
 .foot{color:var(--mut);font-size:12px;text-align:center}
@@ -72,6 +72,10 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
 .dg>summary.gh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 2px;font-size:15px;color:var(--tx);margin-top:0}
 .gh button{padding:2px 8px;font-size:12px;margin-left:auto}
 .pl button{border:none;background:none;color:var(--mut);padding:0 4px}
+.rt{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--mut)}
+.rt input{width:135px;font-size:12px;padding:2px 4px}
+.bar input[type=search]{flex:1;min-width:130px}
+button.inv{background:var(--ac);color:#fff;border-color:var(--ac)}
 </style>
 </head>
 <body>
@@ -103,6 +107,7 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
     <input type="text" id="a-n" placeholder="Nuova voce (es. Bolletta luce)">
     <input type="number" id="a-a" step="0.01" min="0" placeholder="Importo €">
     <select id="a-s"><option value="m">Conto principale</option><option value="r">Via Revolut</option></select>
+    <input type="number" id="a-r" min="2" step="1" placeholder="N° rate" title="Rate totali, a partire dal mese della scadenza (facoltativo)">
     <button id="a-b" class="pri">Aggiungi</button>
   </div>
 </div>
@@ -111,6 +116,13 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
   <button data-f="all" class="on">Tutte</button>
   <button data-f="todo">Da pagare</button>
   <button data-f="done">Pagate</button>
+  <button data-f="rate">Rateali</button>
+</div>
+<div class="bar" style="margin-bottom:8px">
+  <input type="search" id="m-q" placeholder="Cerca per nome o nota…">
+  <select id="m-src"><option value="">Tutti i conti</option><option value="m">Conto principale</option><option value="r">Via Revolut</option></select>
+  <select id="m-sort"><option value="date">Ordina: data</option><option value="amount">Ordina: importo</option><option value="name">Ordina: nome</option><option value="status">Ordina: stato</option></select>
+  <button id="m-dir" title="Inverti ordine">⇅</button>
 </div>
 
 <div class="panel tw">
@@ -128,6 +140,7 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
   <div class="panel"><div class="add add4">
     <input type="date" id="aa-d"><input type="text" id="aa-n" placeholder="Nuova scadenza annuale (es. Bollo auto)"><input type="number" id="aa-a" step="0.01" min="0" placeholder="Importo €"><button id="aa-b" class="pri">Aggiungi</button>
   </div><p class="foot" style="margin:6px 0 0">Conta solo giorno e mese: la scadenza si ripete ogni anno e lo stato “pagato” è separato per anno.</p></div>
+  <div class="bar" style="margin-bottom:8px"><input type="search" id="aq" placeholder="Cerca…"><select id="ast"><option value="">Tutte</option><option value="todo">Da pagare</option><option value="done">Pagate</option></select><select id="asort"><option value="date">Ordina: scadenza</option><option value="amount">Ordina: importo</option><option value="name">Ordina: nome</option></select><button id="adir" title="Inverti ordine">⇅</button></div>
   <div class="panel tw"><table style="min-width:520px">
     <thead><tr><th style="width:130px">Scadenza</th><th>Oggetto</th><th style="width:110px;text-align:right">Importo</th><th style="width:100px">Stato</th><th style="width:44px">Pagato</th><th style="width:34px"></th></tr></thead>
     <tbody id="arows"></tbody></table></div>
@@ -142,6 +155,7 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
     <input type="date" id="dd-d" title="Scadenza (facoltativa)">
     <button id="dd-b" class="pri">Aggiungi</button>
   </div></div>
+  <div class="bar" style="margin-bottom:8px"><input type="search" id="dq" placeholder="Cerca persona o descrizione…"><select id="dst"><option value="">Tutti</option><option value="open">Aperti</option><option value="done">Saldati</option></select><select id="ddirf"><option value="">Devo e mi devono</option><option value="d">Solo devo io</option><option value="c">Solo mi devono</option></select><select id="dsort"><option value="res">Ordina: residuo</option><option value="name">Ordina: nome</option><option value="date">Ordina: più recenti</option></select><button id="dinv" title="Inverti ordine">⇅</button></div>
   <datalist id="dwho"></datalist>
   <div id="dlist"></div>
 </div>
@@ -161,11 +175,12 @@ const pad=n=>String(n).padStart(2,'0');
 const eur=n=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(n||0);
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 const r2=n=>Math.round(n*100)/100;
-let S=null,flt='all';
+let S=null,flt='all',VO=false;
+let mf={q:'',src:'',sort:'date',dir:1};
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.months){const n=new Date(),k=n.getFullYear()+'-'+pad(n.getMonth()+1);S={cur:k,months:{[k]:[]}}}
 S.annual=S.annual||[];S.debts=S.debts||[];
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};schedPush()};
+const save=()=>{if(VO)return;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};schedPush()};
 const $=id=>document.getElementById(id);
 const monthLabel=k=>{const[y,m]=k.split('-');const s=new Date(+y,m-1,1).toLocaleDateString('it-IT',{month:'long',year:'numeric'});return s[0].toUpperCase()+s.slice(1)};
 const items=()=>S.months[S.cur];
@@ -183,6 +198,7 @@ function render(){
   const late=sum(i=>!i.paid&&i.date<today);
   const next=all.find(i=>!i.paid&&i.amount>0&&i.date>=today);
   const pct=tot?Math.round(paid/tot*100):0;
+  const rl=all.filter(i=>i.end&&rn(i)>0),rres=r2(rl.reduce((a,i)=>a+i.amount*(rn(i)-(i.paid?1:0)),0));
   $('cards').innerHTML=
    `<div class="card"><small>Totale del mese</small><b>${eur(tot)}</b><span class="s">${all.length} voci</span></div>
     <div class="card"><small>Già pagato</small><b style="color:var(--ok)">${eur(paid)}</b><div class="prog"><i style="width:${pct}%"></i></div><span class="s">${pct}% completato</span></div>
@@ -190,8 +206,11 @@ function render(){
     <div class="card hl"><small>Da pagare dal conto principale</small><b>${eur(lm)}</b><span class="s">su ${eur(tm)} nel mese</span></div>
     <div class="card hl"><small>Da trasferire a Revolut</small><b>${eur(lr)}</b><span class="s">su ${eur(tr)} nel mese</span></div>
     <div class="card"><small>Uscita totale dal conto principale</small><b>${eur(lm+lr)}</b><span class="s">pagamenti diretti + trasferimento</span></div>
-    <div class="card"><small>Prossima scadenza</small><b style="font-size:16px">${next?esc(next.name):'—'}</b><span class="s">${next?new Date(next.date).toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+eur(next.amount):'nessuna'}</span></div>`;
-  const vis=all.filter(i=>flt==='all'||(flt==='todo'?!i.paid:i.paid));
+    <div class="card"><small>Prossima scadenza</small><b style="font-size:16px">${next?esc(next.name):'—'}</b><span class="s">${next?new Date(next.date).toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+eur(next.amount):'nessuna'}</span></div>${rl.length?`<div class="card"><small>Rate residue</small><b>${eur(rres)}</b><span class="s">${rl.length} voci rateali · ancora da pagare</span></div>`:''}`;
+  const q=gk(mf.q),stt0=i=>i.paid?2:(i.amount>0&&i.date<today?0:1);
+  const vis=all.filter(i=>(flt==='all'||(flt==='todo'?!i.paid:flt==='done'?i.paid:!!i.end))&&(!mf.src||i.src===mf.src)&&(!q||gk(i.name+' '+(i.note||'')).includes(q)));
+  const sf={date:(a,b)=>a.date.localeCompare(b.date),amount:(a,b)=>a.amount-b.amount,name:(a,b)=>a.name.localeCompare(b.name),status:(a,b)=>stt0(a)-stt0(b)||a.date.localeCompare(b.date)}[mf.sort];
+  vis.sort((a,b)=>mf.dir*sf(a,b)||a.name.localeCompare(b.name));
   $('rows').innerHTML=vis.map(i=>{
     let c='';
     if(i.paid)c='<span class="chip okc">Pagato</span>';
@@ -199,7 +218,7 @@ function render(){
       if(d<0)c='<span class="chip late">Scaduto</span>';else if(d<=3)c='<span class="chip soon">'+(d===0?'Oggi':'tra '+d+' gg')+'</span>';}
     return `<tr data-id="${i.id}" class="${i.paid?'paid':''}">
       <td><input type="date" data-k="date" value="${i.date}"></td>
-      <td><input class="nm" data-k="name" value="${esc(i.name)}"><input class="nt" data-k="note" placeholder="nota" value="${esc(i.note)}"></td>
+      <td><input class="nm" data-k="name" value="${esc(i.name)}"><input class="nt" data-k="note" placeholder="nota" value="${esc(i.note)}"><div class="rt"><input type="month" data-k="end" value="${i.end||''}" title="Mese dell'ultima rata (vuoto = non rateale)"><span>${rtxt(i)}</span></div></td>
       <td class="n"><input type="number" step="0.01" min="0" data-k="amount" value="${i.amount}"></td>
       <td><select data-k="src"><option value="m"${i.src==='m'?' selected':''}>Conto principale</option><option value="r"${i.src==='r'?' selected':''}>Via Revolut</option></select></td>
       <td>${c}</td>
@@ -231,14 +250,17 @@ $('newm').onclick=()=>{
   const[y,m]=S.cur.split('-').map(Number),ny=m===12?y+1:y,nm=m===12?1:m+1,k=ny+'-'+pad(nm);
   if(!S.months[k]){
     const len=new Date(ny,nm,0).getDate();
-    S.months[k]=items().map(i=>({...i,id:uid(),paid:false,date:k+'-'+pad(Math.min(+i.date.slice(8),len))}));
+    S.months[k]=items().filter(i=>!i.end||i.end>=k).map(i=>({...i,id:uid(),paid:false,date:k+'-'+pad(Math.min(+i.date.slice(8),len))}));
   }
   S.cur=k;render();
 };
 $('a-d').value=S.cur+'-10';
 $('a-b').onclick=()=>{
   const n=$('a-n').value.trim();if(!n){$('a-n').focus();return}
-  items().push({id:uid(),date:$('a-d').value||S.cur+'-01',name:n,amount:parseFloat($('a-a').value)||0,src:$('a-s').value,paid:false,note:''});
+  const dt=$('a-d').value||S.cur+'-01',nr=parseInt($('a-r').value)||0,y0=+dt.slice(0,4),m0=+dt.slice(5,7)-1+Math.max(nr-1,0);
+  const nit={id:uid(),date:dt,name:n,amount:parseFloat($('a-a').value)||0,src:$('a-s').value,paid:false,note:''};
+  if(nr>=2)nit.end=(y0+Math.floor(m0/12))+'-'+pad(m0%12+1);
+  items().push(nit);$('a-r').value='';
   $('a-n').value='';$('a-a').value='';render();
 };
 $('exp').onclick=()=>{
@@ -275,7 +297,7 @@ function rA(){
    <div class="card hl"><small>Resta da pagare</small><b>${eur(left)}</b><span class="s">${n} scadenze${late>0?` · <span class="neg">${eur(late)} scaduti</span>`:''}</span></div>
    <div class="card"><small>Da accantonare al mese</small><b>${eur(tot/12)}</b><span class="s">totale annuo ÷ 12</span></div>
    <div class="card"><small>Prossima scadenza</small><b style="font-size:16px">${nx?esc(nx.a.name):'—'}</b><span class="s">${nx?new Date(nx.dt).toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+eur(nx.a.amount):'nessuna'}</span></div>`;
-  $('arows').innerHTML=L.map(({a,dt,p})=>`<tr data-id="${a.id}" class="${p?'paid':''}">
+  $('arows').innerHTML=visA(L).map(({a,dt,p})=>`<tr data-id="${a.id}" class="${p?'paid':''}">
     <td><input type="date" data-k="date" value="${dt}"></td>
     <td><input class="nm" data-k="name" value="${esc(a.name)}"></td>
     <td class="n"><input type="number" step="0.01" min="0" data-k="amount" value="${a.amount}"></td>
@@ -328,13 +350,14 @@ function rD(){
   $('dcards').innerHTML=`<div class="card hl"><small>Devo ancora</small><b class="neg">${eur(sd)}</b><span class="s">${op.filter(x=>x.dir==='d').length} debiti aperti</span></div>
    <div class="card hl"><small>Mi devono ancora</small><b class="pos">${eur(sc)}</b><span class="s">${op.filter(x=>x.dir==='c').length} crediti aperti</span></div>
    <div class="card"><small>Saldo netto</small><b class="${net>=0?'pos':'neg'}">${eur(net)}</b><span class="s">${net>=0?'a tuo favore':'a tuo carico'}</span></div>`;
+  const q=gk(df.q),fr=S.debts.filter(x=>(!df.dir||x.dir===df.dir)&&(df.st===''||(df.st==='open')===isOpen(x))&&(!q||gk(x.who+' '+(x.note||'')).includes(q)));
   const G=new Map();
-  S.debts.forEach(x=>{const k=gk(x.who);if(!G.has(k))G.set(k,{k,name:String(x.who||'').trim()||'(senza nome)',rows:[]});G.get(k).rows.push(x)});
+  fr.forEach(x=>{const k=gk(x.who);if(!G.has(k))G.set(k,{k,name:String(x.who||'').trim()||'(senza nome)',rows:[]});G.get(k).rows.push(x)});
   const gs=[...G.values()].map(g=>{
     g.rows.sort((a,b)=>(!isOpen(a))-(!isOpen(b))||(a.date||'').localeCompare(b.date||''));
-    const o=g.rows.filter(isOpen);g.d=r2(o.filter(x=>x.dir==='d').reduce((a,x)=>a+remOf(x),0));g.c=r2(o.filter(x=>x.dir==='c').reduce((a,x)=>a+remOf(x),0));g.open=o.length;return g
-  }).sort((a,b)=>(!a.open)-(!b.open)||(b.d+b.c)-(a.d+a.c)||a.name.localeCompare(b.name));
-  $('dwho').innerHTML=gs.map(g=>`<option value="${esc(g.name)}">`).join('');
+    const o=g.rows.filter(isOpen);g.d=r2(o.filter(x=>x.dir==='d').reduce((a,x)=>a+remOf(x),0));g.c=r2(o.filter(x=>x.dir==='c').reduce((a,x)=>a+remOf(x),0));g.open=o.length;g.last=g.rows.reduce((m,x)=>(x.date||'')>m?(x.date||''):m,'');return g
+  }).sort((a,b)=>{const f=df.sort==='name'?a.name.localeCompare(b.name):df.sort==='date'?(b.last||'').localeCompare(a.last||''):(!a.open)-(!b.open)||(b.d+b.c)-(a.d+a.c);return df.inv*f||a.name.localeCompare(b.name)});
+  $('dwho').innerHTML=[...new Set(S.debts.map(x=>String(x.who||'').trim()).filter(Boolean))].map(n=>`<option value="${esc(n)}">`).join('');
   $('dlist').innerHTML=gs.map(g=>`<details class="dg" data-g="${esc(g.k)}" data-n="${esc(g.name)}"${gclosed.has(g.k)?'':' open'}><summary class="gh"><b>${esc(g.name)}</b>${g.c>0?` <span class="chip okc">Mi deve ${eur(g.c)}</span>`:''}${g.d>0?` <span class="chip late">Devo ${eur(g.d)}</span>`:''}${g.d>0&&g.c>0?` <span class="s">netto ${eur(g.c-g.d)}</span>`:''}${g.open?'':' <span class="chip okc">Saldato</span>'}<span class="s"> · ${g.rows.length} ${g.rows.length===1?'movimento':'movimenti'}</span><button data-ren title="Rinomina persona">✎</button></summary>
     ${g.rows.map(x=>dRow(x,t)).join('')}
     <div class="dr" style="margin:0 0 4px 0"><input class="ga" type="number" step="0.01" min="0" placeholder="Importo €" style="width:110px"><input class="gn" placeholder="Descrizione" style="flex:1;min-width:120px"><select class="gd"><option value="c"${g.d>0&&g.c<=0?'':' selected'}>Mi deve</option><option value="d"${g.d>0&&g.c<=0?' selected':''}>Devo io</option></select><button data-gadd>＋ Movimento</button></div>
@@ -364,6 +387,31 @@ $('dlist').addEventListener('click',e=>{
   else if(T.closest('[data-addp]')){const v=parseFloat(c.querySelector('.pa').value);if(v>0){x.pay.push({id:uid(),date:tdy(),a:v});render()}else c.querySelector('.pa').focus()}
   else if(T.closest('[data-all]')){const r=remOf(x);if(r>0){x.pay.push({id:uid(),date:tdy(),a:r});render()}}
 });
+
+/* ---- Rate, filtri e ordinamento ---- */
+function rn(i){const[y,m]=S.cur.split('-').map(Number),[ey,em]=i.end.split('-').map(Number);return (ey-y)*12+(em-m)+1}
+function rtxt(i){if(!i.end)return 'rateale?';const n=rn(i);return (n<=0?'rateizzazione conclusa':n===1?'<b>ultima rata</b>':n+' rate ancora (compresa questa)')+(n>0?' · fino a '+monthLabel(i.end):'')}
+const view=()=>{VO=true;try{render()}finally{VO=false}};
+const af={q:'',st:'',sort:'date',dir:1},df={q:'',st:'',dir:'',sort:'res',inv:1};
+function visA(L){
+  const q=gk(af.q);
+  const f={date:(x,y)=>x.dt.localeCompare(y.dt),amount:(x,y)=>x.a.amount-y.a.amount,name:(x,y)=>x.a.name.localeCompare(y.a.name)}[af.sort];
+  return L.filter(x=>(!af.st||(af.st==='todo'?!x.p:x.p))&&(!q||gk(x.a.name).includes(q))).sort((x,y)=>af.dir*f(x,y)||x.a.name.localeCompare(y.a.name));
+}
+const on=(id,ev,fn)=>$(id).addEventListener(ev,fn);
+on('m-q','input',e=>{mf.q=e.target.value;view()});
+on('m-src','change',e=>{mf.src=e.target.value;view()});
+on('m-sort','change',e=>{mf.sort=e.target.value;view()});
+on('m-dir','click',e=>{mf.dir*=-1;e.currentTarget.classList.toggle('inv',mf.dir<0);view()});
+on('aq','input',e=>{af.q=e.target.value;rA()});
+on('ast','change',e=>{af.st=e.target.value;rA()});
+on('asort','change',e=>{af.sort=e.target.value;rA()});
+on('adir','click',e=>{af.dir*=-1;e.currentTarget.classList.toggle('inv',af.dir<0);rA()});
+on('dq','input',e=>{df.q=e.target.value;rD()});
+on('dst','change',e=>{df.st=e.target.value;rD()});
+on('ddirf','change',e=>{df.dir=e.target.value;rD()});
+on('dsort','change',e=>{df.sort=e.target.value;rD()});
+on('dinv','click',e=>{df.inv*=-1;e.currentTarget.classList.toggle('inv',df.inv<0);rD()});
 
 /* ---- Sincronizzazione GitHub (file JSON in repository privato) ---- */
 const SK='prospetto-spese-sync';
