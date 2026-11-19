@@ -49,12 +49,25 @@ tr.paid input.nm{text-decoration:line-through}
 .okc{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
 .ck input{width:20px;height:20px;accent-color:var(--ok)}
 .x button{border:none;background:none;color:var(--mut);padding:2px 6px}
-.add{display:grid;grid-template-columns:130px 1fr 110px 150px 80px auto;gap:6px}
+.add{display:grid;grid-template-columns:130px 1fr 110px 150px auto;gap:6px}
 @media(max-width:640px){.add{grid-template-columns:1fr 1fr}}
 .seg button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
 .foot{color:var(--mut);font-size:12px;text-align:center}
-.tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto}
-.tabs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.hl{display:flex;align-items:center;gap:10px;min-width:0}
+.hl h1{line-height:1.15}
+.hl .sub{font-size:12px;color:var(--mut);white-space:nowrap}
+#burger{font-size:20px;line-height:1;padding:6px 11px}
+.bd{position:fixed;inset:0;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(280px,82vw);background:var(--card);border-right:1px solid var(--bd);z-index:50;transform:translateX(-102%);transition:transform .22s;display:flex;flex-direction:column;gap:6px;padding:max(16px,env(safe-area-inset-top)) 14px max(16px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));overflow-y:auto;visibility:hidden}
+body.menu-open .drawer{transform:none;visibility:visible}
+body.menu-open .bd{opacity:1;pointer-events:auto}
+.drawer .dt{font-weight:700;font-size:16px;margin:2px 4px 8px}
+.drawer button{text-align:left;padding:11px 12px;width:100%}
+.drawer button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.drawer hr{border:0;border-top:1px solid var(--bd);margin:6px 0;width:100%}
+.sortb{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
+.sortb label{font-size:12px;color:var(--mut);display:flex;gap:6px;align-items:center}
+.sortb select{padding:5px 8px}
 .add4{grid-template-columns:130px 1fr 110px auto}
 .dad{display:grid;grid-template-columns:1fr 130px 110px 140px auto;gap:6px}
 @media(max-width:640px){.add4{grid-template-columns:1fr 1fr}.dad{grid-template-columns:1fr 1fr}}
@@ -72,16 +85,13 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
 .dg>summary.gh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 2px;font-size:15px;color:var(--tx);margin-top:0}
 .gh button{padding:2px 8px;font-size:12px;margin-left:auto}
 .pl button{border:none;background:none;color:var(--mut);padding:0 4px}
-.rt{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--mut)}
-.rt input{width:135px;font-size:12px;padding:2px 4px}
-.bar input[type=search]{flex:1;min-width:130px}
-button.inv{background:var(--ac);color:#fff;border-color:var(--ac)}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <h1>💶 Prospetto spese</h1>
+  <div class="hl"><button id="burger" aria-label="Apri menu" aria-expanded="false" aria-controls="tabs">☰</button>
+    <div><h1>💶 Prospetto spese</h1><div class="sub"><span id="cursec">Mensile</span><span id="sst"></span></div></div></div>
   <div class="bar" id="mnav">
     <button id="prev" title="Mese precedente">‹</button>
     <select id="mon"></select>
@@ -89,7 +99,8 @@ button.inv{background:var(--ac);color:#fff;border-color:var(--ac)}
     <button id="newm" class="pri" title="Crea il mese successivo copiando le voci">＋ Nuovo mese</button>
   </div>
 </header>
-<nav class="tabs" id="tabs"><button data-t="m" class="on">Mensile</button><button data-t="a">Annuali</button><button data-t="d">Debiti e crediti</button><button id="syncb" title="Sincronizzazione con GitHub">☁ Sync</button><span id="sst" class="s" style="align-self:center;white-space:nowrap"></span></nav>
+<div class="bd" id="bd"></div>
+<nav class="drawer" id="tabs"><div class="dt">Menu</div><button data-t="m" class="on">Mensile</button><button data-t="a">Annuali</button><button data-t="d">Debiti e crediti</button><hr><button id="syncb" title="Sincronizzazione con GitHub">☁ Sync</button></nav>
 <div class="panel" id="synp" style="display:none">
   <b>Sincronizzazione con GitHub</b>
   <p class="foot" style="text-align:left;margin:4px 0">Usa un repository <b>privato</b> e un token fine-grained limitato a quel solo repository (permesso Contents: Read and write). Il token resta solo in questo browser e non finisce nel backup.</p>
@@ -107,7 +118,6 @@ button.inv{background:var(--ac);color:#fff;border-color:var(--ac)}
     <input type="text" id="a-n" placeholder="Nuova voce (es. Bolletta luce)">
     <input type="number" id="a-a" step="0.01" min="0" placeholder="Importo €">
     <select id="a-s"><option value="m">Conto principale</option><option value="r">Via Revolut</option></select>
-    <input type="number" id="a-r" min="2" step="1" placeholder="N° rate" title="Rate totali, a partire dal mese della scadenza (facoltativo)">
     <button id="a-b" class="pri">Aggiungi</button>
   </div>
 </div>
@@ -116,13 +126,6 @@ button.inv{background:var(--ac);color:#fff;border-color:var(--ac)}
   <button data-f="all" class="on">Tutte</button>
   <button data-f="todo">Da pagare</button>
   <button data-f="done">Pagate</button>
-  <button data-f="rate">Rateali</button>
-</div>
-<div class="bar" style="margin-bottom:8px">
-  <input type="search" id="m-q" placeholder="Cerca per nome o nota…">
-  <select id="m-src"><option value="">Tutti i conti</option><option value="m">Conto principale</option><option value="r">Via Revolut</option></select>
-  <select id="m-sort"><option value="date">Ordina: data</option><option value="amount">Ordina: importo</option><option value="name">Ordina: nome</option><option value="status">Ordina: stato</option></select>
-  <button id="m-dir" title="Inverti ordine">⇅</button>
 </div>
 
 <div class="panel tw">
@@ -140,7 +143,6 @@ button.inv{background:var(--ac);color:#fff;border-color:var(--ac)}
   <div class="panel"><div class="add add4">
     <input type="date" id="aa-d"><input type="text" id="aa-n" placeholder="Nuova scadenza annuale (es. Bollo auto)"><input type="number" id="aa-a" step="0.01" min="0" placeholder="Importo €"><button id="aa-b" class="pri">Aggiungi</button>
   </div><p class="foot" style="margin:6px 0 0">Conta solo giorno e mese: la scadenza si ripete ogni anno e lo stato “pagato” è separato per anno.</p></div>
-  <div class="bar" style="margin-bottom:8px"><input type="search" id="aq" placeholder="Cerca…"><select id="ast"><option value="">Tutte</option><option value="todo">Da pagare</option><option value="done">Pagate</option></select><select id="asort"><option value="date">Ordina: scadenza</option><option value="amount">Ordina: importo</option><option value="name">Ordina: nome</option></select><button id="adir" title="Inverti ordine">⇅</button></div>
   <div class="panel tw"><table style="min-width:520px">
     <thead><tr><th style="width:130px">Scadenza</th><th>Oggetto</th><th style="width:110px;text-align:right">Importo</th><th style="width:100px">Stato</th><th style="width:44px">Pagato</th><th style="width:34px"></th></tr></thead>
     <tbody id="arows"></tbody></table></div>
@@ -155,8 +157,13 @@ button.inv{background:var(--ac);color:#fff;border-color:var(--ac)}
     <input type="date" id="dd-d" title="Scadenza (facoltativa)">
     <button id="dd-b" class="pri">Aggiungi</button>
   </div></div>
-  <div class="bar" style="margin-bottom:8px"><input type="search" id="dq" placeholder="Cerca persona o descrizione…"><select id="dst"><option value="">Tutti</option><option value="open">Aperti</option><option value="done">Saldati</option></select><select id="ddirf"><option value="">Devo e mi devono</option><option value="d">Solo devo io</option><option value="c">Solo mi devono</option></select><select id="dsort"><option value="res">Ordina: residuo</option><option value="name">Ordina: nome</option><option value="date">Ordina: più recenti</option></select><button id="dinv" title="Inverti ordine">⇅</button></div>
   <datalist id="dwho"></datalist>
+  <div class="sortb">
+    <label>Persone <select id="so-g">
+      <option value="res">Più da saldare</option><option value="name">Nome A–Z</option><option value="rec">Movimento più recente</option><option value="due">Scadenza più vicina</option></select></label>
+    <label>Spese <select id="so-r">
+      <option value="auto">Aperte, per data</option><option value="dnew">Data: più recente</option><option value="dold">Data: meno recente</option><option value="amh">Importo: maggiore</option><option value="aml">Importo: minore</option><option value="rem">Residuo: maggiore</option><option value="due">Scadenza più vicina</option></select></label>
+  </div>
   <div id="dlist"></div>
 </div>
 
@@ -175,12 +182,11 @@ const pad=n=>String(n).padStart(2,'0');
 const eur=n=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(n||0);
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 const r2=n=>Math.round(n*100)/100;
-let S=null,flt='all',VO=false;
-let mf={q:'',src:'',sort:'date',dir:1};
+let S=null,flt='all';
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.months){const n=new Date(),k=n.getFullYear()+'-'+pad(n.getMonth()+1);S={cur:k,months:{[k]:[]}}}
 S.annual=S.annual||[];S.debts=S.debts||[];
-const save=()=>{if(VO)return;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};schedPush()};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};schedPush()};
 const $=id=>document.getElementById(id);
 const monthLabel=k=>{const[y,m]=k.split('-');const s=new Date(+y,m-1,1).toLocaleDateString('it-IT',{month:'long',year:'numeric'});return s[0].toUpperCase()+s.slice(1)};
 const items=()=>S.months[S.cur];
@@ -198,7 +204,6 @@ function render(){
   const late=sum(i=>!i.paid&&i.date<today);
   const next=all.find(i=>!i.paid&&i.amount>0&&i.date>=today);
   const pct=tot?Math.round(paid/tot*100):0;
-  const rl=all.filter(i=>i.end&&rn(i)>0),rres=r2(rl.reduce((a,i)=>a+i.amount*(rn(i)-(i.paid?1:0)),0));
   $('cards').innerHTML=
    `<div class="card"><small>Totale del mese</small><b>${eur(tot)}</b><span class="s">${all.length} voci</span></div>
     <div class="card"><small>Già pagato</small><b style="color:var(--ok)">${eur(paid)}</b><div class="prog"><i style="width:${pct}%"></i></div><span class="s">${pct}% completato</span></div>
@@ -206,11 +211,8 @@ function render(){
     <div class="card hl"><small>Da pagare dal conto principale</small><b>${eur(lm)}</b><span class="s">su ${eur(tm)} nel mese</span></div>
     <div class="card hl"><small>Da trasferire a Revolut</small><b>${eur(lr)}</b><span class="s">su ${eur(tr)} nel mese</span></div>
     <div class="card"><small>Uscita totale dal conto principale</small><b>${eur(lm+lr)}</b><span class="s">pagamenti diretti + trasferimento</span></div>
-    <div class="card"><small>Prossima scadenza</small><b style="font-size:16px">${next?esc(next.name):'—'}</b><span class="s">${next?new Date(next.date).toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+eur(next.amount):'nessuna'}</span></div>${rl.length?`<div class="card"><small>Rate residue</small><b>${eur(rres)}</b><span class="s">${rl.length} voci rateali · ancora da pagare</span></div>`:''}`;
-  const q=gk(mf.q),stt0=i=>i.paid?2:(i.amount>0&&i.date<today?0:1);
-  const vis=all.filter(i=>(flt==='all'||(flt==='todo'?!i.paid:flt==='done'?i.paid:!!i.end))&&(!mf.src||i.src===mf.src)&&(!q||gk(i.name+' '+(i.note||'')).includes(q)));
-  const sf={date:(a,b)=>a.date.localeCompare(b.date),amount:(a,b)=>a.amount-b.amount,name:(a,b)=>a.name.localeCompare(b.name),status:(a,b)=>stt0(a)-stt0(b)||a.date.localeCompare(b.date)}[mf.sort];
-  vis.sort((a,b)=>mf.dir*sf(a,b)||a.name.localeCompare(b.name));
+    <div class="card"><small>Prossima scadenza</small><b style="font-size:16px">${next?esc(next.name):'—'}</b><span class="s">${next?new Date(next.date).toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+eur(next.amount):'nessuna'}</span></div>`;
+  const vis=all.filter(i=>flt==='all'||(flt==='todo'?!i.paid:i.paid));
   $('rows').innerHTML=vis.map(i=>{
     let c='';
     if(i.paid)c='<span class="chip okc">Pagato</span>';
@@ -218,7 +220,7 @@ function render(){
       if(d<0)c='<span class="chip late">Scaduto</span>';else if(d<=3)c='<span class="chip soon">'+(d===0?'Oggi':'tra '+d+' gg')+'</span>';}
     return `<tr data-id="${i.id}" class="${i.paid?'paid':''}">
       <td><input type="date" data-k="date" value="${i.date}"></td>
-      <td><input class="nm" data-k="name" value="${esc(i.name)}"><input class="nt" data-k="note" placeholder="nota" value="${esc(i.note)}"><div class="rt"><input type="month" data-k="end" value="${i.end||''}" title="Mese dell'ultima rata (vuoto = non rateale)"><span>${rtxt(i)}</span></div></td>
+      <td><input class="nm" data-k="name" value="${esc(i.name)}"><input class="nt" data-k="note" placeholder="nota" value="${esc(i.note)}"></td>
       <td class="n"><input type="number" step="0.01" min="0" data-k="amount" value="${i.amount}"></td>
       <td><select data-k="src"><option value="m"${i.src==='m'?' selected':''}>Conto principale</option><option value="r"${i.src==='r'?' selected':''}>Via Revolut</option></select></td>
       <td>${c}</td>
@@ -250,17 +252,14 @@ $('newm').onclick=()=>{
   const[y,m]=S.cur.split('-').map(Number),ny=m===12?y+1:y,nm=m===12?1:m+1,k=ny+'-'+pad(nm);
   if(!S.months[k]){
     const len=new Date(ny,nm,0).getDate();
-    S.months[k]=items().filter(i=>!i.end||i.end>=k).map(i=>({...i,id:uid(),paid:false,date:k+'-'+pad(Math.min(+i.date.slice(8),len))}));
+    S.months[k]=items().map(i=>({...i,id:uid(),paid:false,date:k+'-'+pad(Math.min(+i.date.slice(8),len))}));
   }
   S.cur=k;render();
 };
 $('a-d').value=S.cur+'-10';
 $('a-b').onclick=()=>{
   const n=$('a-n').value.trim();if(!n){$('a-n').focus();return}
-  const dt=$('a-d').value||S.cur+'-01',nr=parseInt($('a-r').value)||0,y0=+dt.slice(0,4),m0=+dt.slice(5,7)-1+Math.max(nr-1,0);
-  const nit={id:uid(),date:dt,name:n,amount:parseFloat($('a-a').value)||0,src:$('a-s').value,paid:false,note:''};
-  if(nr>=2)nit.end=(y0+Math.floor(m0/12))+'-'+pad(m0%12+1);
-  items().push(nit);$('a-r').value='';
+  items().push({id:uid(),date:$('a-d').value||S.cur+'-01',name:n,amount:parseFloat($('a-a').value)||0,src:$('a-s').value,paid:false,note:''});
   $('a-n').value='';$('a-a').value='';render();
 };
 $('exp').onclick=()=>{
@@ -277,9 +276,14 @@ $('file').onchange=e=>{
   r.readAsText(f);e.target.value='';
 };
 
+const setMenu=o=>{document.body.classList.toggle('menu-open',o);$('burger').setAttribute('aria-expanded',o);$('burger').textContent=o?'✕':'☰'};
+const closeMenu=()=>setMenu(false);
+$('burger').onclick=()=>setMenu(!document.body.classList.contains('menu-open'));
+$('bd').onclick=closeMenu;
+addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu()});
 const tdy=()=>{const t=new Date();return t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate())};
 let ay=new Date().getFullYear();
-function setTab(t){['m','a','d'].forEach(k=>{$('v-'+k).style.display=k===t?'':'none'});$('mnav').style.display=t==='m'?'':'none';document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t))}
+function setTab(t){['m','a','d'].forEach(k=>{$('v-'+k).style.display=k===t?'':'none'});$('mnav').style.display=t==='m'?'':'none';document.querySelectorAll('#tabs button[data-t]').forEach(b=>{const on=b.dataset.t===t;b.classList.toggle('on',on);if(on)$('cursec').textContent=b.textContent});closeMenu()}
 $('tabs').onclick=e=>{if(e.target.dataset.t)setTab(e.target.dataset.t)};
 const fd=d=>new Date(d).toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'});
 
@@ -297,7 +301,7 @@ function rA(){
    <div class="card hl"><small>Resta da pagare</small><b>${eur(left)}</b><span class="s">${n} scadenze${late>0?` · <span class="neg">${eur(late)} scaduti</span>`:''}</span></div>
    <div class="card"><small>Da accantonare al mese</small><b>${eur(tot/12)}</b><span class="s">totale annuo ÷ 12</span></div>
    <div class="card"><small>Prossima scadenza</small><b style="font-size:16px">${nx?esc(nx.a.name):'—'}</b><span class="s">${nx?new Date(nx.dt).toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+eur(nx.a.amount):'nessuna'}</span></div>`;
-  $('arows').innerHTML=visA(L).map(({a,dt,p})=>`<tr data-id="${a.id}" class="${p?'paid':''}">
+  $('arows').innerHTML=L.map(({a,dt,p})=>`<tr data-id="${a.id}" class="${p?'paid':''}">
     <td><input type="date" data-k="date" value="${dt}"></td>
     <td><input class="nm" data-k="name" value="${esc(a.name)}"></td>
     <td class="n"><input type="number" step="0.01" min="0" data-k="amount" value="${a.amount}"></td>
@@ -329,6 +333,18 @@ $('arows').addEventListener('click',e=>{
 
 /* ---- Debiti e crediti ---- */
 const paidOf=x=>r2(x.pay.reduce((a,p)=>a+p.a,0)),remOf=x=>r2(x.total-paidOf(x));
+const SORTK='prospetto-spese-sort';
+let SO={g:'res',r:'auto'};try{Object.assign(SO,JSON.parse(localStorage.getItem(SORTK))||{})}catch(e){}
+const cmpS=(a,b)=>a<b?-1:a>b?1:0,dueK=x=>x.due||'9999-99-99';
+const rowCmp={
+  auto:(a,b)=>cmpS(a.date||'',b.date||''),
+  dold:(a,b)=>cmpS(a.date||'',b.date||''),
+  dnew:(a,b)=>cmpS(b.date||'',a.date||''),
+  amh:(a,b)=>b.total-a.total,
+  aml:(a,b)=>a.total-b.total,
+  rem:(a,b)=>remOf(b)-remOf(a),
+  due:(a,b)=>cmpS(dueK(a),dueK(b))
+};
 const gclosed=new Set(),gk=w=>String(w||'').trim().toLowerCase(),isOpen=x=>remOf(x)>0.004;
 const dRow=(x,t)=>{
   const rem=remOf(x),pd=paidOf(x),done=!isOpen(x),pct=x.total>0?Math.min(100,Math.round(pd/x.total*100)):0,deb=x.dir==='d',late=!done&&x.due&&x.due<t;
@@ -350,20 +366,26 @@ function rD(){
   $('dcards').innerHTML=`<div class="card hl"><small>Devo ancora</small><b class="neg">${eur(sd)}</b><span class="s">${op.filter(x=>x.dir==='d').length} debiti aperti</span></div>
    <div class="card hl"><small>Mi devono ancora</small><b class="pos">${eur(sc)}</b><span class="s">${op.filter(x=>x.dir==='c').length} crediti aperti</span></div>
    <div class="card"><small>Saldo netto</small><b class="${net>=0?'pos':'neg'}">${eur(net)}</b><span class="s">${net>=0?'a tuo favore':'a tuo carico'}</span></div>`;
-  const q=gk(df.q),fr=S.debts.filter(x=>(!df.dir||x.dir===df.dir)&&(df.st===''||(df.st==='open')===isOpen(x))&&(!q||gk(x.who+' '+(x.note||'')).includes(q)));
   const G=new Map();
-  fr.forEach(x=>{const k=gk(x.who);if(!G.has(k))G.set(k,{k,name:String(x.who||'').trim()||'(senza nome)',rows:[]});G.get(k).rows.push(x)});
+  S.debts.forEach(x=>{const k=gk(x.who);if(!G.has(k))G.set(k,{k,name:String(x.who||'').trim()||'(senza nome)',rows:[]});G.get(k).rows.push(x)});
   const gs=[...G.values()].map(g=>{
-    g.rows.sort((a,b)=>(!isOpen(a))-(!isOpen(b))||(a.date||'').localeCompare(b.date||''));
-    const o=g.rows.filter(isOpen);g.d=r2(o.filter(x=>x.dir==='d').reduce((a,x)=>a+remOf(x),0));g.c=r2(o.filter(x=>x.dir==='c').reduce((a,x)=>a+remOf(x),0));g.open=o.length;g.last=g.rows.reduce((m,x)=>(x.date||'')>m?(x.date||''):m,'');return g
-  }).sort((a,b)=>{const f=df.sort==='name'?a.name.localeCompare(b.name):df.sort==='date'?(b.last||'').localeCompare(a.last||''):(!a.open)-(!b.open)||(b.d+b.c)-(a.d+a.c);return df.inv*f||a.name.localeCompare(b.name)});
-  $('dwho').innerHTML=[...new Set(S.debts.map(x=>String(x.who||'').trim()).filter(Boolean))].map(n=>`<option value="${esc(n)}">`).join('');
+    g.rows.sort((a,b)=>(!isOpen(a))-(!isOpen(b))||rowCmp[SO.r](a,b)||cmpS(a.date||'',b.date||''));
+    g.last=g.rows.reduce((m,x)=>(x.date||'')>m?(x.date||''):m,'');g.nd=g.rows.filter(isOpen).reduce((m,x)=>dueK(x)<m?dueK(x):m,'9999-99-99');
+    const o=g.rows.filter(isOpen);g.d=r2(o.filter(x=>x.dir==='d').reduce((a,x)=>a+remOf(x),0));g.c=r2(o.filter(x=>x.dir==='c').reduce((a,x)=>a+remOf(x),0));g.open=o.length;return g
+  }).sort((a,b)=>{
+    const o=(!a.open)-(!b.open);if(o)return o;
+    const k=SO.g==='name'?0:SO.g==='rec'?cmpS(b.last,a.last):SO.g==='due'?cmpS(a.nd,b.nd):((b.d+b.c)-(a.d+a.c));
+    return k||a.name.localeCompare(b.name)
+  });
+  $('dwho').innerHTML=gs.map(g=>`<option value="${esc(g.name)}">`).join('');
   $('dlist').innerHTML=gs.map(g=>`<details class="dg" data-g="${esc(g.k)}" data-n="${esc(g.name)}"${gclosed.has(g.k)?'':' open'}><summary class="gh"><b>${esc(g.name)}</b>${g.c>0?` <span class="chip okc">Mi deve ${eur(g.c)}</span>`:''}${g.d>0?` <span class="chip late">Devo ${eur(g.d)}</span>`:''}${g.d>0&&g.c>0?` <span class="s">netto ${eur(g.c-g.d)}</span>`:''}${g.open?'':' <span class="chip okc">Saldato</span>'}<span class="s"> · ${g.rows.length} ${g.rows.length===1?'movimento':'movimenti'}</span><button data-ren title="Rinomina persona">✎</button></summary>
     ${g.rows.map(x=>dRow(x,t)).join('')}
     <div class="dr" style="margin:0 0 4px 0"><input class="ga" type="number" step="0.01" min="0" placeholder="Importo €" style="width:110px"><input class="gn" placeholder="Descrizione" style="flex:1;min-width:120px"><select class="gd"><option value="c"${g.d>0&&g.c<=0?'':' selected'}>Mi deve</option><option value="d"${g.d>0&&g.c<=0?' selected':''}>Devo io</option></select><button data-gadd>＋ Movimento</button></div>
   </details>`).join('')||'<p class="foot" style="padding:18px">Nessun debito o credito: aggiungine uno qui sopra</p>';
 }
 $('dlist').addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.g!==undefined){d.open?gclosed.delete(d.dataset.g):gclosed.add(d.dataset.g)}},true);
+$('so-g').value=SO.g;$('so-r').value=SO.r;
+['g','r'].forEach(k=>$('so-'+k).onchange=e=>{SO[k]=e.target.value;try{localStorage.setItem(SORTK,JSON.stringify(SO))}catch(x){}rD()});
 $('dd-b').onclick=()=>{
   const w=$('dd-w').value.trim();if(!w){$('dd-w').focus();return}
   S.debts.push({id:uid(),who:w,dir:$('dd-t').value,total:parseFloat($('dd-a').value)||0,due:$('dd-d').value,date:tdy(),note:'',pay:[]});
@@ -388,37 +410,12 @@ $('dlist').addEventListener('click',e=>{
   else if(T.closest('[data-all]')){const r=remOf(x);if(r>0){x.pay.push({id:uid(),date:tdy(),a:r});render()}}
 });
 
-/* ---- Rate, filtri e ordinamento ---- */
-function rn(i){const[y,m]=S.cur.split('-').map(Number),[ey,em]=i.end.split('-').map(Number);return (ey-y)*12+(em-m)+1}
-function rtxt(i){if(!i.end)return 'rateale?';const n=rn(i);return (n<=0?'rateizzazione conclusa':n===1?'<b>ultima rata</b>':n+' rate ancora (compresa questa)')+(n>0?' · fino a '+monthLabel(i.end):'')}
-const view=()=>{VO=true;try{render()}finally{VO=false}};
-const af={q:'',st:'',sort:'date',dir:1},df={q:'',st:'',dir:'',sort:'res',inv:1};
-function visA(L){
-  const q=gk(af.q);
-  const f={date:(x,y)=>x.dt.localeCompare(y.dt),amount:(x,y)=>x.a.amount-y.a.amount,name:(x,y)=>x.a.name.localeCompare(y.a.name)}[af.sort];
-  return L.filter(x=>(!af.st||(af.st==='todo'?!x.p:x.p))&&(!q||gk(x.a.name).includes(q))).sort((x,y)=>af.dir*f(x,y)||x.a.name.localeCompare(y.a.name));
-}
-const on=(id,ev,fn)=>$(id).addEventListener(ev,fn);
-on('m-q','input',e=>{mf.q=e.target.value;view()});
-on('m-src','change',e=>{mf.src=e.target.value;view()});
-on('m-sort','change',e=>{mf.sort=e.target.value;view()});
-on('m-dir','click',e=>{mf.dir*=-1;e.currentTarget.classList.toggle('inv',mf.dir<0);view()});
-on('aq','input',e=>{af.q=e.target.value;rA()});
-on('ast','change',e=>{af.st=e.target.value;rA()});
-on('asort','change',e=>{af.sort=e.target.value;rA()});
-on('adir','click',e=>{af.dir*=-1;e.currentTarget.classList.toggle('inv',af.dir<0);rA()});
-on('dq','input',e=>{df.q=e.target.value;rD()});
-on('dst','change',e=>{df.st=e.target.value;rD()});
-on('ddirf','change',e=>{df.dir=e.target.value;rD()});
-on('dsort','change',e=>{df.sort=e.target.value;rD()});
-on('dinv','click',e=>{df.inv*=-1;e.currentTarget.classList.toggle('inv',df.inv<0);rD()});
-
 /* ---- Sincronizzazione GitHub (file JSON in repository privato) ---- */
 const SK='prospetto-spese-sync';
 let C={};try{C=JSON.parse(localStorage.getItem(SK))||{}}catch(e){}
 const svC=()=>{try{localStorage.setItem(SK,JSON.stringify(C))}catch(e){}};
 const b64e=x=>btoa(unescape(encodeURIComponent(x))),b64d=x=>decodeURIComponent(escape(atob(x.replace(/\s/g,''))));
-const stt=m=>{$('sst').textContent=m};
+const stt=m=>{$('sst').textContent=m?' · '+m:''};
 const pk=()=>{const{cur,...r}=S;return JSON.stringify(r)};
 let busy=false,tmr=null;
 function schedPush(){if(C.repo&&C.tok){clearTimeout(tmr);tmr=setTimeout(syncNow,1500)}}
@@ -453,7 +450,7 @@ async function syncNow(retry){
   }catch(err){stt('☁ '+(navigator.onLine?err.message:'offline'))}
   busy=false;
 }
-$('syncb').onclick=()=>{const p=$('synp');p.style.display=p.style.display==='none'?'':'none';$('sy-r').value=C.repo||'';$('sy-p').value=C.path||'prospetto-spese.json';$('sy-b').value=C.br||'main';$('sy-t').value='';$('sy-t').placeholder=C.tok?'Token già salvato (lascia vuoto per mantenerlo)':'Token (github_pat_...)'};
+$('syncb').onclick=()=>{closeMenu();const p=$('synp');p.style.display=p.style.display==='none'?'':'none';$('sy-r').value=C.repo||'';$('sy-p').value=C.path||'prospetto-spese.json';$('sy-b').value=C.br||'main';$('sy-t').value='';$('sy-t').placeholder=C.tok?'Token già salvato (lascia vuoto per mantenerlo)':'Token (github_pat_...)'};
 $('sy-s').onclick=()=>{
   const repo=$('sy-r').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,''),path=$('sy-p').value.trim()||'prospetto-spese.json',br=$('sy-b').value.trim()||'main',tok=$('sy-t').value.trim()||C.tok;
   if(!/^[^\/\s]+\/[^\/\s]+$/.test(repo)||!tok){alert('Inserisci repository (utente/repository) e token');return}
