@@ -68,9 +68,16 @@ body.menu-open .bd{opacity:1;pointer-events:auto}
 .sortb{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
 .sortb label{font-size:12px;color:var(--mut);display:flex;gap:6px;align-items:center}
 .sortb select{padding:5px 8px}
-.add4{grid-template-columns:130px 1fr 110px auto}
-.dad{display:grid;grid-template-columns:1fr 130px 110px 140px auto;gap:6px}
-@media(max-width:640px){.add4{grid-template-columns:1fr 1fr}.dad{grid-template-columns:1fr 1fr}}
+.add4{grid-template-columns:130px 1fr 110px 150px auto}
+.dad{display:grid;grid-template-columns:1fr 130px 110px 140px 150px auto;gap:6px}
+.addc{display:grid;grid-template-columns:1fr 170px auto;gap:6px}
+.al{display:grid;grid-template-columns:1fr 170px auto auto;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--bd)}
+.mn{display:flex;gap:5px;align-items:center;font-size:13px;color:var(--mut);white-space:nowrap}
+.mn input{width:18px;height:18px;padding:0;accent-color:var(--ac)}
+.ac .t{font-weight:700;font-size:16px}
+.ac .r{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin-top:4px}
+.ac .r span:first-child{color:var(--mut)}
+@media(max-width:640px){.add4{grid-template-columns:1fr 1fr}.dad{grid-template-columns:1fr 1fr}.addc{grid-template-columns:1fr 1fr}.al{grid-template-columns:1fr 1fr}}
 .dc{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:10px}
 .dc.done{opacity:.55}
 .dr{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
@@ -100,7 +107,7 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
   </div>
 </header>
 <div class="bd" id="bd"></div>
-<nav class="drawer" id="tabs"><div class="dt">Menu</div><button data-t="m" class="on">Mensile</button><button data-t="a">Annuali</button><button data-t="d">Debiti e crediti</button><hr><button id="syncb" title="Sincronizzazione con GitHub">☁ Sync</button></nav>
+<nav class="drawer" id="tabs"><div class="dt">Menu</div><button data-t="m" class="on">Mensile</button><button data-t="a">Annuali</button><button data-t="d">Debiti e crediti</button><button data-t="c">Conti</button><hr><button id="syncb" title="Sincronizzazione con GitHub">☁ Sync</button></nav>
 <div class="panel" id="synp" style="display:none">
   <b>Sincronizzazione con GitHub</b>
   <p class="foot" style="text-align:left;margin:4px 0">Usa un repository <b>privato</b> e un token fine-grained limitato a quel solo repository (permesso Contents: Read and write). Il token resta solo in questo browser e non finisce nel backup.</p>
@@ -117,7 +124,7 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
     <input type="date" id="a-d">
     <input type="text" id="a-n" placeholder="Nuova voce (es. Bolletta luce)">
     <input type="number" id="a-a" step="0.01" min="0" placeholder="Importo €">
-    <select id="a-s"><option value="m">Conto principale</option><option value="r">Via Revolut</option></select>
+    <select id="a-s" title="Si paga da"></select>
     <button id="a-b" class="pri">Aggiungi</button>
   </div>
 </div>
@@ -141,10 +148,10 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
   <div class="bar" style="justify-content:center;margin-bottom:12px"><button id="ay-p">‹</button><b id="ay" style="font-size:18px"></b><button id="ay-n">›</button></div>
   <div class="cards" id="acards"></div>
   <div class="panel"><div class="add add4">
-    <input type="date" id="aa-d"><input type="text" id="aa-n" placeholder="Nuova scadenza annuale (es. Bollo auto)"><input type="number" id="aa-a" step="0.01" min="0" placeholder="Importo €"><button id="aa-b" class="pri">Aggiungi</button>
+    <input type="date" id="aa-d"><input type="text" id="aa-n" placeholder="Nuova scadenza annuale (es. Bollo auto)"><input type="number" id="aa-a" step="0.01" min="0" placeholder="Importo €"><select id="aa-s" title="Si paga da"></select><button id="aa-b" class="pri">Aggiungi</button>
   </div><p class="foot" style="margin:6px 0 0">Conta solo giorno e mese: la scadenza si ripete ogni anno e lo stato “pagato” è separato per anno.</p></div>
-  <div class="panel tw"><table style="min-width:520px">
-    <thead><tr><th style="width:130px">Scadenza</th><th>Oggetto</th><th style="width:110px;text-align:right">Importo</th><th style="width:100px">Stato</th><th style="width:44px">Pagato</th><th style="width:34px"></th></tr></thead>
+  <div class="panel tw"><table style="min-width:640px">
+    <thead><tr><th style="width:130px">Scadenza</th><th>Oggetto</th><th style="width:110px;text-align:right">Importo</th><th style="width:150px">Si paga da</th><th style="width:100px">Stato</th><th style="width:44px">Pagato</th><th style="width:34px"></th></tr></thead>
     <tbody id="arows"></tbody></table></div>
 </div>
 
@@ -155,6 +162,7 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
     <select id="dd-t"><option value="d">Devo io</option><option value="c">Mi devono</option></select>
     <input type="number" id="dd-a" step="0.01" min="0" placeholder="Totale €">
     <input type="date" id="dd-d" title="Scadenza (facoltativa)">
+    <select id="dd-c" title="Conto"></select>
     <button id="dd-b" class="pri">Aggiungi</button>
   </div></div>
   <datalist id="dwho"></datalist>
@@ -165,6 +173,16 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
       <option value="auto">Aperte, per data</option><option value="dnew">Data: più recente</option><option value="dold">Data: meno recente</option><option value="amh">Importo: maggiore</option><option value="aml">Importo: minore</option><option value="rem">Residuo: maggiore</option><option value="due">Scadenza più vicina</option></select></label>
   </div>
   <div id="dlist"></div>
+</div>
+
+<div id="v-c" style="display:none">
+  <div class="cards" id="ccards"></div>
+  <div class="panel"><b>I tuoi conti</b>
+    <p class="foot" style="text-align:left;margin:4px 0 6px">Il conto <b>principale</b> è quello da cui paghi e da cui trasferisci agli altri. Gli stessi conti si scelgono nelle spese mensili e annuali e in debiti e crediti.</p>
+    <div id="cl"></div>
+    <div class="addc" style="margin-top:8px"><input id="ac-n" placeholder="Nuovo conto (es. Carta Visa, Contanti)"><select id="ac-t"></select><button id="ac-b" class="pri">Aggiungi</button></div>
+  </div>
+  <p class="foot" id="cnote"></p>
 </div>
 
 <div class="bar" style="justify-content:center;margin-bottom:10px">
@@ -185,21 +203,36 @@ const r2=n=>Math.round(n*100)/100;
 let S=null,flt='all';
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.months){const n=new Date(),k=n.getFullYear()+'-'+pad(n.getMonth()+1);S={cur:k,months:{[k]:[]}}}
-S.annual=S.annual||[];S.debts=S.debts||[];
+const ACT={cc:'Conto corrente',carta:'Carta / prepagata',cash:'Contanti',risp:'Risparmio',alt:'Altro'};
+function norm(){
+  S.annual=S.annual||[];S.debts=S.debts||[];
+  if(!Array.isArray(S.accts)||!S.accts.length){S.accts=[{id:'m',name:'Conto principale',type:'cc'},{id:'r',name:'Revolut',type:'carta'}];S.main='m'}
+  if(!S.accts.some(a=>a.id===S.main))S.main=S.accts[0].id;
+  const ok=id=>S.accts.some(a=>a.id===id);
+  Object.values(S.months).forEach(l=>l.forEach(i=>{if(!ok(i.src))i.src=S.main}));
+  S.annual.forEach(a=>{if(!ok(a.src))a.src=S.main});
+  S.debts.forEach(x=>{x.pay=x.pay||[];if(x.acct&&!ok(x.acct))x.acct='';x.pay.forEach(p=>{if(p.acct&&!ok(p.acct))p.acct=''})});
+}
+norm();
+const accName=id=>(S.accts.find(a=>a.id===id)||{}).name||'';
+const accOpts=(sel,blank)=>(blank?`<option value=""${sel?'':' selected'}>${blank}</option>`:'')+S.accts.map(a=>`<option value="${a.id}"${a.id===sel?' selected':''}>${esc(a.name)}</option>`).join('');
+const fillSel=()=>[['a-s',S.main,''],['aa-s',S.main,''],['dd-c','','Conto: non specificato']].forEach(([id,def,bl])=>{
+  const e=$(id),v=e.value;e.innerHTML=accOpts(null,bl);e.value=(v&&[...e.options].some(o=>o.value===v))?v:def});
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};schedPush()};
 const $=id=>document.getElementById(id);
 const monthLabel=k=>{const[y,m]=k.split('-');const s=new Date(+y,m-1,1).toLocaleDateString('it-IT',{month:'long',year:'numeric'});return s[0].toUpperCase()+s.slice(1)};
 const items=()=>S.months[S.cur];
 
 function render(){
+  fillSel();
   const keys=Object.keys(S.months).sort();
   $('mon').innerHTML=keys.map(k=>`<option value="${k}"${k===S.cur?' selected':''}>${monthLabel(k)}</option>`).join('');
   const t=new Date(),today=t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate());
   const all=[...items()].sort((a,b)=>a.date.localeCompare(b.date)||a.name.localeCompare(b.name));
   const sum=f=>r2(all.filter(f).reduce((s,i)=>s+(+i.amount||0),0));
   const tot=sum(()=>1),paid=sum(i=>i.paid),left=sum(i=>!i.paid);
-  const lm=sum(i=>!i.paid&&i.src==='m'),lr=sum(i=>!i.paid&&i.src==='r');
-  const tm=sum(i=>i.src==='m'),tr=sum(i=>i.src==='r');
+  const mainN=esc(accName(S.main)),lm=sum(i=>!i.paid&&i.src===S.main),tm=sum(i=>i.src===S.main);
+  const oth=S.accts.filter(a=>a.id!==S.main).map(a=>({a,l:sum(i=>!i.paid&&i.src===a.id),t:sum(i=>i.src===a.id)})).filter(o=>o.t>0||o.l>0);
   const nLeft=all.filter(i=>!i.paid&&i.amount>0).length;
   const late=sum(i=>!i.paid&&i.date<today);
   const next=all.find(i=>!i.paid&&i.amount>0&&i.date>=today);
@@ -208,9 +241,9 @@ function render(){
    `<div class="card"><small>Totale del mese</small><b>${eur(tot)}</b><span class="s">${all.length} voci</span></div>
     <div class="card"><small>Già pagato</small><b style="color:var(--ok)">${eur(paid)}</b><div class="prog"><i style="width:${pct}%"></i></div><span class="s">${pct}% completato</span></div>
     <div class="card hl"><small>Resta da pagare</small><b>${eur(left)}</b><span class="s">${nLeft} scadenze${late>0?` · <span style="color:var(--bad)">${eur(late)} scaduti</span>`:''}</span></div>
-    <div class="card hl"><small>Da pagare dal conto principale</small><b>${eur(lm)}</b><span class="s">su ${eur(tm)} nel mese</span></div>
-    <div class="card hl"><small>Da trasferire a Revolut</small><b>${eur(lr)}</b><span class="s">su ${eur(tr)} nel mese</span></div>
-    <div class="card"><small>Uscita totale dal conto principale</small><b>${eur(lm+lr)}</b><span class="s">pagamenti diretti + trasferimento</span></div>
+    <div class="card hl"><small>Da pagare da: ${mainN}</small><b>${eur(lm)}</b><span class="s">su ${eur(tm)} nel mese</span></div>
+    ${oth.map(o=>`<div class="card hl"><small>Da trasferire a: ${esc(o.a.name)}</small><b>${eur(o.l)}</b><span class="s">su ${eur(o.t)} nel mese</span></div>`).join('')}
+    <div class="card"><small>Uscita totale da: ${mainN}</small><b>${eur(left)}</b><span class="s">pagamenti diretti + trasferimenti</span></div>
     <div class="card"><small>Prossima scadenza</small><b style="font-size:16px">${next?esc(next.name):'—'}</b><span class="s">${next?new Date(next.date).toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+eur(next.amount):'nessuna'}</span></div>`;
   const vis=all.filter(i=>flt==='all'||(flt==='todo'?!i.paid:i.paid));
   $('rows').innerHTML=vis.map(i=>{
@@ -222,11 +255,11 @@ function render(){
       <td><input type="date" data-k="date" value="${i.date}"></td>
       <td><input class="nm" data-k="name" value="${esc(i.name)}"><input class="nt" data-k="note" placeholder="nota" value="${esc(i.note)}"></td>
       <td class="n"><input type="number" step="0.01" min="0" data-k="amount" value="${i.amount}"></td>
-      <td><select data-k="src"><option value="m"${i.src==='m'?' selected':''}>Conto principale</option><option value="r"${i.src==='r'?' selected':''}>Via Revolut</option></select></td>
+      <td><select data-k="src">${accOpts(i.src)}</select></td>
       <td>${c}</td>
       <td class="ck"><input type="checkbox" data-k="paid"${i.paid?' checked':''}></td>
       <td class="x"><button data-del title="Elimina">✕</button></td></tr>`}).join('')||'<tr><td colspan="7" style="color:var(--mut);text-align:center;padding:18px">Nessuna voce</td></tr>';
-  rA();rD();save();
+  rA();rD();rC();save();
 }
 
 $('rows').addEventListener('change',e=>{
@@ -272,7 +305,7 @@ $('file').onchange=e=>{
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
   r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.months||!d.cur)throw 0;
-    if(confirm('Sostituire i dati attuali con il backup?')){S=d;S.annual=S.annual||[];S.debts=S.debts||[];render()}}catch(x){alert('File non valido')}};
+    if(confirm('Sostituire i dati attuali con il backup?')){S=d;norm();render()}}catch(x){alert('File non valido')}};
   r.readAsText(f);e.target.value='';
 };
 
@@ -283,7 +316,7 @@ $('bd').onclick=closeMenu;
 addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu()});
 const tdy=()=>{const t=new Date();return t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate())};
 let ay=new Date().getFullYear();
-function setTab(t){['m','a','d'].forEach(k=>{$('v-'+k).style.display=k===t?'':'none'});$('mnav').style.display=t==='m'?'':'none';document.querySelectorAll('#tabs button[data-t]').forEach(b=>{const on=b.dataset.t===t;b.classList.toggle('on',on);if(on)$('cursec').textContent=b.textContent});closeMenu()}
+function setTab(t){['m','a','d','c'].forEach(k=>{$('v-'+k).style.display=k===t?'':'none'});$('mnav').style.display=t==='m'?'':'none';document.querySelectorAll('#tabs button[data-t]').forEach(b=>{const on=b.dataset.t===t;b.classList.toggle('on',on);if(on)$('cursec').textContent=b.textContent});closeMenu()}
 $('tabs').onclick=e=>{if(e.target.dataset.t)setTab(e.target.dataset.t)};
 const fd=d=>new Date(d).toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'});
 
@@ -305,16 +338,17 @@ function rA(){
     <td><input type="date" data-k="date" value="${dt}"></td>
     <td><input class="nm" data-k="name" value="${esc(a.name)}"></td>
     <td class="n"><input type="number" step="0.01" min="0" data-k="amount" value="${a.amount}"></td>
+    <td><select data-k="src">${accOpts(a.src)}</select></td>
     <td>${chip(p,a.amount,dt,t)}</td>
     <td class="ck"><input type="checkbox" data-k="paid"${p?' checked':''}></td>
-    <td class="x"><button data-del title="Elimina">✕</button></td></tr>`).join('')||'<tr><td colspan="6" style="color:var(--mut);text-align:center;padding:18px">Nessuna scadenza annuale: aggiungi la prima qui sopra</td></tr>';
+    <td class="x"><button data-del title="Elimina">✕</button></td></tr>`).join('')||'<tr><td colspan="7" style="color:var(--mut);text-align:center;padding:18px">Nessuna scadenza annuale: aggiungi la prima qui sopra</td></tr>';
 }
 $('ay-p').onclick=()=>{ay--;rA()};$('ay-n').onclick=()=>{ay++;rA()};
 $('aa-d').value=ay+'-01-01';
 $('aa-b').onclick=()=>{
   const n=$('aa-n').value.trim();if(!n){$('aa-n').focus();return}
   const v=$('aa-d').value||ay+'-01-01';
-  S.annual.push({id:uid(),name:n,m:+v.slice(5,7),d:+v.slice(8,10),amount:parseFloat($('aa-a').value)||0,paid:{}});
+  S.annual.push({id:uid(),name:n,m:+v.slice(5,7),d:+v.slice(8,10),amount:parseFloat($('aa-a').value)||0,src:$('aa-s').value||S.main,paid:{}});
   $('aa-n').value='';$('aa-a').value='';render();
 };
 $('arows').addEventListener('change',e=>{
@@ -352,13 +386,14 @@ const dRow=(x,t)=>{
     <div class="dr" style="margin:0"><input type="date" data-k="date" value="${x.date||''}" title="Data del movimento">
       <input class="nm" data-k="note" placeholder="descrizione" value="${esc(x.note)}">
       <select data-k="dir"><option value="d"${deb?' selected':''}>Devo io</option><option value="c"${deb?'':' selected'}>Mi devono</option></select>
+      <select data-k="acct" title="${deb?'Conto su cui sono arrivati i soldi':'Conto da cui sono usciti i soldi'}">${accOpts(x.acct,'Conto: non specificato')}</select>
       <input type="number" step="0.01" min="0" data-k="total" value="${x.total}" style="width:90px">
       ${done?'<span class="chip okc">Saldato</span>':late?'<span class="chip late">Scaduto</span>':''}
       <button data-del title="Elimina" style="border:none;background:none;color:var(--mut)">✕</button></div>
     <div class="prog"><i style="width:${pct}%"></i></div>
     <div class="s" style="font-size:13px;margin-top:4px">${deb?'Restituito':'Incassato'} <b>${eur(pd)}</b> di ${eur(x.total)} · resta <b class="${deb?'neg':'pos'}">${eur(Math.max(rem,0))}</b> · scadenza <input type="date" data-k="due" value="${x.due||''}" style="padding:2px 4px;font-size:12px;width:auto"></div>
-    ${done?'':`<div class="dr"><input type="number" class="pa" step="0.01" min="0" placeholder="Importo €"><button data-addp class="pri">${deb?'Registra pagamento':'Registra incasso'}</button><button data-all>Salda tutto</button></div>`}
-    ${x.pay.length?`<details><summary>Movimenti (${x.pay.length})</summary>${x.pay.map(p=>`<div class="pl" data-pid="${p.id}"><span>${fd(p.date)}</span><span>${eur(p.a)}<button data-delp title="Elimina">✕</button></span></div>`).join('')}</details>`:''}
+    ${done?'':`<div class="dr"><input type="number" class="pa" step="0.01" min="0" placeholder="Importo €"><select class="pc" title="Conto del ${deb?'pagamento':'incasso'}">${accOpts(x.acct||S.main)}</select><button data-addp class="pri">${deb?'Registra pagamento':'Registra incasso'}</button><button data-all>Salda tutto</button></div>`}
+    ${x.pay.length?`<details><summary>Movimenti (${x.pay.length})</summary>${x.pay.map(p=>`<div class="pl" data-pid="${p.id}"><span>${fd(p.date)}${p.acct?' · '+esc(accName(p.acct)):''}</span><span>${eur(p.a)}<button data-delp title="Elimina">✕</button></span></div>`).join('')}</details>`:''}
   </div>`};
 function rD(){
   const t=tdy(),op=S.debts.filter(isOpen);
@@ -380,7 +415,7 @@ function rD(){
   $('dwho').innerHTML=gs.map(g=>`<option value="${esc(g.name)}">`).join('');
   $('dlist').innerHTML=gs.map(g=>`<details class="dg" data-g="${esc(g.k)}" data-n="${esc(g.name)}"${gclosed.has(g.k)?'':' open'}><summary class="gh"><b>${esc(g.name)}</b>${g.c>0?` <span class="chip okc">Mi deve ${eur(g.c)}</span>`:''}${g.d>0?` <span class="chip late">Devo ${eur(g.d)}</span>`:''}${g.d>0&&g.c>0?` <span class="s">netto ${eur(g.c-g.d)}</span>`:''}${g.open?'':' <span class="chip okc">Saldato</span>'}<span class="s"> · ${g.rows.length} ${g.rows.length===1?'movimento':'movimenti'}</span><button data-ren title="Rinomina persona">✎</button></summary>
     ${g.rows.map(x=>dRow(x,t)).join('')}
-    <div class="dr" style="margin:0 0 4px 0"><input class="ga" type="number" step="0.01" min="0" placeholder="Importo €" style="width:110px"><input class="gn" placeholder="Descrizione" style="flex:1;min-width:120px"><select class="gd"><option value="c"${g.d>0&&g.c<=0?'':' selected'}>Mi deve</option><option value="d"${g.d>0&&g.c<=0?' selected':''}>Devo io</option></select><button data-gadd>＋ Movimento</button></div>
+    <div class="dr" style="margin:0 0 4px 0"><input class="ga" type="number" step="0.01" min="0" placeholder="Importo €" style="width:110px"><input class="gn" placeholder="Descrizione" style="flex:1;min-width:120px"><select class="gd"><option value="c"${g.d>0&&g.c<=0?'':' selected'}>Mi deve</option><option value="d"${g.d>0&&g.c<=0?' selected':''}>Devo io</option></select><select class="gc" title="Conto">${accOpts('','Conto: non specificato')}</select><button data-gadd>＋ Movimento</button></div>
   </details>`).join('')||'<p class="foot" style="padding:18px">Nessun debito o credito: aggiungine uno qui sopra</p>';
 }
 $('dlist').addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.g!==undefined){d.open?gclosed.delete(d.dataset.g):gclosed.add(d.dataset.g)}},true);
@@ -388,7 +423,7 @@ $('so-g').value=SO.g;$('so-r').value=SO.r;
 ['g','r'].forEach(k=>$('so-'+k).onchange=e=>{SO[k]=e.target.value;try{localStorage.setItem(SORTK,JSON.stringify(SO))}catch(x){}rD()});
 $('dd-b').onclick=()=>{
   const w=$('dd-w').value.trim();if(!w){$('dd-w').focus();return}
-  S.debts.push({id:uid(),who:w,dir:$('dd-t').value,total:parseFloat($('dd-a').value)||0,due:$('dd-d').value,date:tdy(),note:'',pay:[]});
+  S.debts.push({id:uid(),who:w,dir:$('dd-t').value,total:parseFloat($('dd-a').value)||0,due:$('dd-d').value,acct:$('dd-c').value,date:tdy(),note:'',pay:[]});
   $('dd-w').value='';$('dd-a').value='';$('dd-d').value='';render();
 };
 $('dlist').addEventListener('change',e=>{
@@ -401,13 +436,56 @@ $('dlist').addEventListener('click',e=>{
   if(T.closest('[data-ren]')){e.preventDefault();const n=prompt('Nuovo nome della persona',dg.dataset.n);
     if(n&&n.trim()){S.debts.filter(x=>gk(x.who)===dg.dataset.g).forEach(x=>x.who=n.trim());render()}return}
   if(T.closest('[data-gadd]')){const v=parseFloat(dg.querySelector('.ga').value);
-    if(v>0){S.debts.push({id:uid(),who:dg.dataset.n,dir:dg.querySelector('.gd').value,total:v,due:'',date:tdy(),note:dg.querySelector('.gn').value.trim(),pay:[]});render()}else dg.querySelector('.ga').focus();return}
+    if(v>0){S.debts.push({id:uid(),who:dg.dataset.n,dir:dg.querySelector('.gd').value,total:v,due:'',acct:dg.querySelector('.gc').value,date:tdy(),note:dg.querySelector('.gn').value.trim(),pay:[]});render()}else dg.querySelector('.ga').focus();return}
   const c=T.closest('.dc');if(!c)return;
   const x=S.debts.find(y=>y.id===c.dataset.id);if(!x)return;
   if(T.closest('[data-del]')){if(confirm('Eliminare questo movimento con tutti i pagamenti?')){S.debts=S.debts.filter(y=>y!==x);render()}}
   else if(T.closest('[data-delp]')){const id=T.closest('.pl').dataset.pid;x.pay=x.pay.filter(p=>p.id!==id);render()}
-  else if(T.closest('[data-addp]')){const v=parseFloat(c.querySelector('.pa').value);if(v>0){x.pay.push({id:uid(),date:tdy(),a:v});render()}else c.querySelector('.pa').focus()}
-  else if(T.closest('[data-all]')){const r=remOf(x);if(r>0){x.pay.push({id:uid(),date:tdy(),a:r});render()}}
+  else if(T.closest('[data-addp]')){const v=parseFloat(c.querySelector('.pa').value);if(v>0){x.pay.push({id:uid(),date:tdy(),a:v,acct:c.querySelector('.pc').value});render()}else c.querySelector('.pa').focus()}
+  else if(T.closest('[data-all]')){const r=remOf(x);if(r>0){x.pay.push({id:uid(),date:tdy(),a:r,acct:c.querySelector('.pc').value});render()}}
+});
+
+/* ---- Conti ---- */
+const useCount=id=>Object.values(S.months).reduce((n,l)=>n+l.filter(i=>i.src===id).length,0)+S.annual.filter(a=>a.src===id).length+S.debts.reduce((n,x)=>n+(x.acct===id?1:0)+x.pay.filter(p=>p.acct===id).length,0);
+function rC(){
+  $('cl').innerHTML=S.accts.map(a=>`<div class="al" data-id="${a.id}"><input data-k="name" value="${esc(a.name)}" placeholder="Nome conto"><select data-k="type">${Object.entries(ACT).map(([k,v])=>`<option value="${k}"${a.type===k?' selected':''}>${v}</option>`).join('')}</select><label class="mn"><input type="radio" name="mainacc" data-main${a.id===S.main?' checked':''}> Principale</label><button data-del title="Elimina">✕</button></div>`).join('');
+  const sm=(l,f)=>r2(l.filter(f).reduce((s,i)=>s+(+i.amount||0),0));
+  $('ccards').innerHTML=S.accts.map(a=>{
+    const mi=items().filter(i=>i.src===a.id),ml=sm(mi,i=>!i.paid),mt=sm(mi,()=>1);
+    const an=S.annual.filter(x=>x.src===a.id&&!(x.paid&&x.paid[ay])),al=sm(an,()=>1);
+    const od=S.debts.filter(x=>x.acct===a.id&&isOpen(x)),dd=r2(od.filter(x=>x.dir==='d').reduce((s,x)=>s+remOf(x),0)),dc=r2(od.filter(x=>x.dir==='c').reduce((s,x)=>s+remOf(x),0));
+    return `<div class="card ac${a.id===S.main?' hl':''}"><div class="t">${esc(a.name)}</div><small>${ACT[a.type]||ACT.alt}${a.id===S.main?' · principale':''}</small>
+      <div class="r"><span>${monthLabel(S.cur)}</span><b style="font-size:14px">${eur(mt)}</b></div>
+      <div class="r"><span>· da pagare</span><span>${eur(ml)}</span></div>
+      <div class="r"><span>Annuali ${ay} da pagare</span><span>${eur(al)}</span></div>
+      <div class="r"><span>Devo (debiti aperti)</span><span class="${dd>0?'neg':''}">${eur(dd)}</span></div>
+      <div class="r"><span>Mi devono (crediti aperti)</span><span class="${dc>0?'pos':''}">${eur(dc)}</span></div></div>`}).join('');
+  const nn=S.debts.filter(x=>!x.acct&&isOpen(x)).length;
+  $('cnote').textContent=nn?nn+(nn===1?' debito/credito aperto è':' debiti/crediti aperti sono')+' senza conto: sceglilo nella sezione Debiti e crediti.':'';
+}
+$('ac-t').innerHTML=Object.entries(ACT).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+$('ac-b').onclick=()=>{
+  const n=$('ac-n').value.trim();if(!n){$('ac-n').focus();return}
+  S.accts.push({id:uid(),name:n,type:$('ac-t').value});$('ac-n').value='';render();
+};
+$('cl').addEventListener('change',e=>{
+  const row=e.target.closest('.al');if(!row)return;
+  const a=S.accts.find(x=>x.id===row.dataset.id);if(!a)return;
+  if(e.target.dataset.main!==undefined)S.main=a.id;
+  else if(e.target.dataset.k==='name')a.name=e.target.value.trim()||a.name;
+  else if(e.target.dataset.k==='type')a.type=e.target.value;
+  render();
+});
+$('cl').addEventListener('click',e=>{
+  if(!e.target.closest('[data-del]'))return;
+  const id=e.target.closest('.al').dataset.id,a=S.accts.find(x=>x.id===id);if(!a)return;
+  if(id===S.main){alert('Questo è il conto principale: scegline prima un altro come principale.');return}
+  const n=useCount(id);
+  if(!confirm(n?'“'+a.name+'” è usato in '+n+(n===1?' voce':' voci')+'.\nEliminandolo, spese mensili e annuali passano a “'+accName(S.main)+'”, mentre debiti, crediti e pagamenti restano senza conto.\n\nEliminare?':'Eliminare il conto “'+a.name+'”?'))return;
+  Object.values(S.months).forEach(l=>l.forEach(i=>{if(i.src===id)i.src=S.main}));
+  S.annual.forEach(x=>{if(x.src===id)x.src=S.main});
+  S.debts.forEach(x=>{if(x.acct===id)x.acct='';x.pay.forEach(p=>{if(p.acct===id)p.acct=''})});
+  S.accts=S.accts.filter(x=>x.id!==id);render();
 });
 
 /* ---- Sincronizzazione GitHub (file JSON in repository privato) ---- */
@@ -434,7 +512,7 @@ async function syncNow(retry){
       else useRemote=true;
     }
     if(useRemote){
-      const cur=S.cur;S=remote;S.annual=S.annual||[];S.debts=S.debts||[];
+      const cur=S.cur;S=remote;norm();
       S.cur=S.months[cur]?cur:Object.keys(S.months).sort().pop();
       C.sha=sha;C.snap=pk();svC();render();
     }else if(!remote||dirty||sha!==C.sha){
