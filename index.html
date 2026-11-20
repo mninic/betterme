@@ -53,9 +53,9 @@ tr.paid input.nm{text-decoration:line-through}
 @media(max-width:640px){.add{grid-template-columns:1fr 1fr}}
 .seg button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
 .foot{color:var(--mut);font-size:12px;text-align:center}
-.hl{display:flex;align-items:center;gap:10px;min-width:0}
-.hl h1{line-height:1.15}
-.hl .sub{font-size:12px;color:var(--mut);white-space:nowrap}
+.hdl{display:flex;align-items:center;gap:10px;min-width:0}
+.hdl h1{line-height:1.15}
+.hdl .sub{font-size:12px;color:var(--mut);white-space:nowrap}
 #burger{font-size:20px;line-height:1;padding:6px 11px}
 .bd{position:fixed;inset:0;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
 .drawer{position:fixed;top:0;left:0;bottom:0;width:min(280px,82vw);background:var(--card);border-right:1px solid var(--bd);z-index:50;transform:translateX(-102%);transition:transform .22s;display:flex;flex-direction:column;gap:6px;padding:max(16px,env(safe-area-inset-top)) 14px max(16px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));overflow-y:auto;visibility:hidden}
@@ -92,21 +92,120 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
 .dg>summary.gh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 2px;font-size:15px;color:var(--tx);margin-top:0}
 .gh button{padding:2px 8px;font-size:12px;margin-left:auto}
 .pl button{border:none;background:none;color:var(--mut);padding:0 4px}
+
+.add>*,.dad>*,.addc>*,.al>*{min-width:0}
+button,select,input{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#fab,.sh-t{display:none}
+@media(max-width:700px){
+ body{padding:0 12px calc(92px + env(safe-area-inset-bottom))}
+ body.menu-open,body.sheet-open{overflow:hidden}
+ header{position:sticky;top:0;z-index:30;background:var(--bg);margin:0 -12px 10px;padding:max(8px,env(safe-area-inset-top)) 12px 8px;border-bottom:1px solid var(--bd);flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:8px}
+ .hdl{width:100%}
+ #mnav{display:flex;flex-wrap:nowrap;gap:6px;width:100%}
+ #mnav select{flex:1 1 auto;min-width:0}
+ #mnav .hide-m{display:none}
+ button,select,input{font-size:16px;min-height:44px}
+ input[type=checkbox],input[type=radio]{min-height:0}
+ .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+ #ccards{grid-template-columns:minmax(0,1fr)}
+ .cards>.card:last-child:nth-child(odd){grid-column:1/-1}
+ .card{padding:10px 12px}
+ .card b{display:block;font-size:18px}
+ .card .s{display:block}
+ .card b.nx{display:block;font-size:15px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .panel{padding:10px;margin-bottom:12px}
+ .seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+
+ /* ---- nuovo inserimento: pulsante + e pannello a scomparsa dal basso ---- */
+ #fab{display:flex;position:fixed;right:max(16px,env(safe-area-inset-right));bottom:calc(16px + env(safe-area-inset-bottom));width:56px;height:56px;min-height:0;border-radius:50%;padding:0;align-items:center;justify-content:center;font-size:30px;line-height:1;background:var(--ac);border:0;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:35}
+ body[data-tab=c] #fab,body.menu-open #fab,body.sheet-open #fab{display:none}
+ .addp{position:fixed;left:0;right:0;bottom:0;margin:0;z-index:45;border-radius:16px 16px 0 0;border-width:1px 0 0;padding:12px 14px calc(16px + env(safe-area-inset-bottom));max-height:88vh;max-height:88dvh;overflow-y:auto;transform:translateY(105%);visibility:hidden;transition:transform .22s,visibility 0s .22s}
+ body.sheet-open .addp{transform:none;visibility:visible;transition:transform .22s}
+ body.sheet-open .bd{opacity:1;pointer-events:auto}
+ .sh-t{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:17px}
+ .sh-x{border:0;background:none;color:var(--mut);padding:0 8px;min-width:44px;font-size:20px}
+ .add,.add4,.dad{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .add>input[type=text],.dad>input[type=text]{grid-column:1/-1;order:-1}
+ .add>select,.add>button,.dad>button{grid-column:1/-1}
+
+ /* ---- tabelle -> schede ---- */
+ .panel.tw{background:none;border:0;padding:0;overflow:visible}
+ table,tbody{display:block;min-width:0!important}
+ thead{display:none}
+ tbody tr{display:grid;grid-template-columns:44px minmax(0,1fr) 108px 44px;grid-template-areas:"ck nm n x" "ck dt src src" "st st st st";gap:6px 4px;align-items:center;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:8px 6px;margin-bottom:8px}
+ tbody tr.emp{display:block;padding:18px}
+ tbody td{display:block;border:0;padding:0;min-width:0}
+ tbody td:empty{display:none}
+ tbody td:nth-child(1){grid-area:dt}
+ tbody td:nth-child(2){grid-area:nm}
+ tbody td.n{grid-area:n}
+ tbody td:nth-child(4){grid-area:src}
+ tbody td:nth-child(5){grid-area:st;padding-left:44px}
+ tbody td.ck{grid-area:ck;align-self:start;display:flex;justify-content:center;padding-top:9px}
+ tbody td.x{grid-area:x;align-self:start}
+ tbody td.x button{width:44px;height:44px;padding:0;font-size:18px}
+ .ck input{width:26px;height:26px}
+ td input,td select{border:1px solid var(--bd);background:var(--row);min-height:40px;padding:6px 8px}
+ td input.nm{font-weight:600;border-color:transparent;background:transparent;padding-left:4px}
+ td input.nt{border-color:transparent;background:transparent;padding:0 4px 4px;font-size:16px;min-height:32px}
+ td.n input{font-weight:600}
+
+ /* ---- debiti e crediti ---- */
+ .dr{gap:8px}
+ .dc{padding:10px}
+ .dc>.dr:first-child{align-items:center}
+ .dc>.dr:first-child>.nm{order:1;flex:1 1 calc(100% - 60px);min-width:0}
+ .dc>.dr:first-child>button{order:2;flex:0 0 44px;min-width:44px;padding:0}
+ .dc>.dr:first-child>.chip{order:3;flex:0 0 auto}
+ .dc>.dr:first-child>input[data-k=date]{order:4;flex:1 1 calc(50% - 4px)}
+ .dc>.dr:first-child>input[data-k=total]{order:5;flex:1 1 calc(50% - 4px)}
+ .dc>.dr:first-child>select[data-k=dir]{order:6;flex:1 1 calc(50% - 4px)}
+ .dc>.dr:first-child>select[data-k=acct]{order:7;flex:1 1 calc(50% - 4px)}
+ .dc .s{line-height:1.8}
+ .dc input[data-k=due]{font-size:16px!important;padding:6px 8px!important;min-height:40px}
+ .dc .pa,.dc .pc{flex:1 1 calc(50% - 4px);width:auto}
+ .dc .dr button{flex:1 1 calc(50% - 4px);padding:6px 8px}
+ .dc .dr button.pri{flex:2 1 0}
+ .dc .dr button[data-all]{flex:1 1 0}
+ .dg>.dr .gn{flex:1 1 100%!important;min-width:0!important;order:-1}
+ .dg>.dr .ga,.dg>.dr .gd{flex:1 1 calc(50% - 4px);width:auto!important}
+ .dg>.dr .gc{flex:1 1 100%}
+ .dg>.dr button{flex:1 1 100%}
+ .dg>summary.gh{min-height:44px}
+ .gh button{min-height:36px;min-width:44px}
+ .pl{padding:6px 0}.pl button{min-height:36px;min-width:36px}
+ .sortb{gap:8px}
+ .sortb label{flex:1 1 100%;justify-content:space-between}
+ .sortb select{flex:0 0 72%;min-width:0;min-height:40px}
+
+ /* ---- conti ---- */
+ .addc{grid-template-columns:minmax(0,1fr) auto;gap:8px}
+ .addc>input{grid-column:1/-1}
+ .al{grid-template-columns:minmax(0,1fr) auto auto;gap:8px}
+ .al>input[data-k=name]{grid-column:1/-1}
+ .mn input{width:22px;height:22px}
+ .al>button{min-width:44px;padding:0}
+
+ /* ---- sincronizzazione ---- */
+ #synp .dr input{flex:1 1 100%!important;min-width:0!important;width:100%!important}
+ #synp .dr button{flex:1 1 calc(50% - 4px)}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <div class="hl"><button id="burger" aria-label="Apri menu" aria-expanded="false" aria-controls="tabs">☰</button>
+  <div class="hdl"><button id="burger" aria-label="Apri menu" aria-expanded="false" aria-controls="tabs">☰</button>
     <div><h1>💶 Prospetto spese</h1><div class="sub"><span id="cursec">Mensile</span><span id="sst"></span></div></div></div>
   <div class="bar" id="mnav">
     <button id="prev" title="Mese precedente">‹</button>
     <select id="mon"></select>
     <button id="next" title="Mese successivo">›</button>
-    <button id="newm" class="pri" title="Crea il mese successivo copiando le voci">＋ Nuovo mese</button>
+    <button id="newm" class="pri" title="Crea il mese successivo copiando le voci">＋<span class="hide-m"> Nuovo mese</span></button>
   </div>
 </header>
 <div class="bd" id="bd"></div>
+<button id="fab" aria-label="Aggiungi" title="Aggiungi">＋</button>
 <nav class="drawer" id="tabs"><div class="dt">Menu</div><button data-t="m" class="on">Mensile</button><button data-t="a">Annuali</button><button data-t="d">Debiti e crediti</button><button data-t="c">Conti</button><hr><button id="syncb" title="Sincronizzazione con GitHub">☁ Sync</button></nav>
 <div class="panel" id="synp" style="display:none">
   <b>Sincronizzazione con GitHub</b>
@@ -119,7 +218,8 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
 
 <div class="cards" id="cards"></div>
 
-<div class="panel">
+<div class="panel addp">
+  <div class="sh-t"><b>Nuova spesa</b><button type="button" class="sh-x" aria-label="Chiudi">✕</button></div>
   <div class="add">
     <input type="date" id="a-d">
     <input type="text" id="a-n" placeholder="Nuova voce (es. Bolletta luce)">
@@ -147,7 +247,7 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
 <div id="v-a" style="display:none">
   <div class="bar" style="justify-content:center;margin-bottom:12px"><button id="ay-p">‹</button><b id="ay" style="font-size:18px"></b><button id="ay-n">›</button></div>
   <div class="cards" id="acards"></div>
-  <div class="panel"><div class="add add4">
+  <div class="panel addp"><div class="sh-t"><b>Nuova scadenza annuale</b><button type="button" class="sh-x" aria-label="Chiudi">✕</button></div><div class="add add4">
     <input type="date" id="aa-d"><input type="text" id="aa-n" placeholder="Nuova scadenza annuale (es. Bollo auto)"><input type="number" id="aa-a" step="0.01" min="0" placeholder="Importo €"><select id="aa-s" title="Si paga da"></select><button id="aa-b" class="pri">Aggiungi</button>
   </div><p class="foot" style="margin:6px 0 0">Conta solo giorno e mese: la scadenza si ripete ogni anno e lo stato “pagato” è separato per anno.</p></div>
   <div class="panel tw"><table style="min-width:640px">
@@ -157,7 +257,7 @@ details summary{cursor:pointer;color:var(--mut);font-size:13px;margin-top:8px}
 
 <div id="v-d" style="display:none">
   <div class="cards" id="dcards"></div>
-  <div class="panel"><div class="dad">
+  <div class="panel addp"><div class="sh-t"><b>Nuovo debito / credito</b><button type="button" class="sh-x" aria-label="Chiudi">✕</button></div><div class="dad">
     <input type="text" id="dd-w" list="dwho" placeholder="Persona / ente">
     <select id="dd-t"><option value="d">Devo io</option><option value="c">Mi devono</option></select>
     <input type="number" id="dd-a" step="0.01" min="0" placeholder="Totale €">
@@ -216,7 +316,7 @@ function norm(){
 norm();
 const accName=id=>(S.accts.find(a=>a.id===id)||{}).name||'';
 const accOpts=(sel,blank)=>(blank?`<option value=""${sel?'':' selected'}>${blank}</option>`:'')+S.accts.map(a=>`<option value="${a.id}"${a.id===sel?' selected':''}>${esc(a.name)}</option>`).join('');
-const fillSel=()=>[['a-s',S.main,''],['aa-s',S.main,''],['dd-c','','Conto: non specificato']].forEach(([id,def,bl])=>{
+const fillSel=()=>[['a-s',S.main,''],['aa-s',S.main,''],['dd-c','','Nessun conto']].forEach(([id,def,bl])=>{
   const e=$(id),v=e.value;e.innerHTML=accOpts(null,bl);e.value=(v&&[...e.options].some(o=>o.value===v))?v:def});
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};schedPush()};
 const $=id=>document.getElementById(id);
@@ -244,7 +344,7 @@ function render(){
     <div class="card hl"><small>Da pagare da: ${mainN}</small><b>${eur(lm)}</b><span class="s">su ${eur(tm)} nel mese</span></div>
     ${oth.map(o=>`<div class="card hl"><small>Da trasferire a: ${esc(o.a.name)}</small><b>${eur(o.l)}</b><span class="s">su ${eur(o.t)} nel mese</span></div>`).join('')}
     <div class="card"><small>Uscita totale da: ${mainN}</small><b>${eur(left)}</b><span class="s">pagamenti diretti + trasferimenti</span></div>
-    <div class="card"><small>Prossima scadenza</small><b style="font-size:16px">${next?esc(next.name):'—'}</b><span class="s">${next?new Date(next.date).toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+eur(next.amount):'nessuna'}</span></div>`;
+    <div class="card"><small>Prossima scadenza</small><b class="nx" style="font-size:16px">${next?esc(next.name):'—'}</b><span class="s">${next?new Date(next.date).toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+eur(next.amount):'nessuna'}</span></div>`;
   const vis=all.filter(i=>flt==='all'||(flt==='todo'?!i.paid:i.paid));
   $('rows').innerHTML=vis.map(i=>{
     let c='';
@@ -258,7 +358,7 @@ function render(){
       <td><select data-k="src">${accOpts(i.src)}</select></td>
       <td>${c}</td>
       <td class="ck"><input type="checkbox" data-k="paid"${i.paid?' checked':''}></td>
-      <td class="x"><button data-del title="Elimina">✕</button></td></tr>`}).join('')||'<tr><td colspan="7" style="color:var(--mut);text-align:center;padding:18px">Nessuna voce</td></tr>';
+      <td class="x"><button data-del title="Elimina">✕</button></td></tr>`}).join('')||'<tr class="emp"><td colspan="7" style="color:var(--mut);text-align:center;padding:18px">Nessuna voce</td></tr>';
   rA();rD();rC();save();
 }
 
@@ -293,7 +393,7 @@ $('a-d').value=S.cur+'-10';
 $('a-b').onclick=()=>{
   const n=$('a-n').value.trim();if(!n){$('a-n').focus();return}
   items().push({id:uid(),date:$('a-d').value||S.cur+'-01',name:n,amount:parseFloat($('a-a').value)||0,src:$('a-s').value,paid:false,note:''});
-  $('a-n').value='';$('a-a').value='';render();
+  $('a-n').value='';$('a-a').value='';closeSheet();render();
 };
 $('exp').onclick=()=>{
   const a=document.createElement('a');
@@ -311,12 +411,17 @@ $('file').onchange=e=>{
 
 const setMenu=o=>{document.body.classList.toggle('menu-open',o);$('burger').setAttribute('aria-expanded',o);$('burger').textContent=o?'✕':'☰'};
 const closeMenu=()=>setMenu(false);
+const FF={m:'a-n',a:'aa-n',d:'dd-w'};
+const openSheet=()=>{document.body.classList.add('sheet-open');const f=FF[document.body.dataset.tab];if(f)setTimeout(()=>$(f).focus(),260)};
+const closeSheet=()=>document.body.classList.remove('sheet-open');
+$('fab').onclick=openSheet;
+document.addEventListener('click',e=>{if(e.target.closest('.sh-x'))closeSheet()});
 $('burger').onclick=()=>setMenu(!document.body.classList.contains('menu-open'));
-$('bd').onclick=closeMenu;
-addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu()});
+$('bd').onclick=()=>{closeMenu();closeSheet()};
+addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();closeSheet()}});
 const tdy=()=>{const t=new Date();return t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate())};
 let ay=new Date().getFullYear();
-function setTab(t){['m','a','d','c'].forEach(k=>{$('v-'+k).style.display=k===t?'':'none'});$('mnav').style.display=t==='m'?'':'none';document.querySelectorAll('#tabs button[data-t]').forEach(b=>{const on=b.dataset.t===t;b.classList.toggle('on',on);if(on)$('cursec').textContent=b.textContent});closeMenu()}
+function setTab(t){['m','a','d','c'].forEach(k=>{$('v-'+k).style.display=k===t?'':'none'});$('mnav').style.display=t==='m'?'':'none';document.querySelectorAll('#tabs button[data-t]').forEach(b=>{const on=b.dataset.t===t;b.classList.toggle('on',on);if(on)$('cursec').textContent=b.textContent});document.body.dataset.tab=t;closeSheet();closeMenu()}
 $('tabs').onclick=e=>{if(e.target.dataset.t)setTab(e.target.dataset.t)};
 const fd=d=>new Date(d).toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'});
 
@@ -333,7 +438,7 @@ function rA(){
    <div class="card"><small>Già pagato</small><b style="color:var(--ok)">${eur(pd)}</b></div>
    <div class="card hl"><small>Resta da pagare</small><b>${eur(left)}</b><span class="s">${n} scadenze${late>0?` · <span class="neg">${eur(late)} scaduti</span>`:''}</span></div>
    <div class="card"><small>Da accantonare al mese</small><b>${eur(tot/12)}</b><span class="s">totale annuo ÷ 12</span></div>
-   <div class="card"><small>Prossima scadenza</small><b style="font-size:16px">${nx?esc(nx.a.name):'—'}</b><span class="s">${nx?new Date(nx.dt).toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+eur(nx.a.amount):'nessuna'}</span></div>`;
+   <div class="card"><small>Prossima scadenza</small><b class="nx" style="font-size:16px">${nx?esc(nx.a.name):'—'}</b><span class="s">${nx?new Date(nx.dt).toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+eur(nx.a.amount):'nessuna'}</span></div>`;
   $('arows').innerHTML=L.map(({a,dt,p})=>`<tr data-id="${a.id}" class="${p?'paid':''}">
     <td><input type="date" data-k="date" value="${dt}"></td>
     <td><input class="nm" data-k="name" value="${esc(a.name)}"></td>
@@ -341,7 +446,7 @@ function rA(){
     <td><select data-k="src">${accOpts(a.src)}</select></td>
     <td>${chip(p,a.amount,dt,t)}</td>
     <td class="ck"><input type="checkbox" data-k="paid"${p?' checked':''}></td>
-    <td class="x"><button data-del title="Elimina">✕</button></td></tr>`).join('')||'<tr><td colspan="7" style="color:var(--mut);text-align:center;padding:18px">Nessuna scadenza annuale: aggiungi la prima qui sopra</td></tr>';
+    <td class="x"><button data-del title="Elimina">✕</button></td></tr>`).join('')||'<tr class="emp"><td colspan="7" style="color:var(--mut);text-align:center;padding:18px">Nessuna scadenza annuale: aggiungi la prima qui sopra</td></tr>';
 }
 $('ay-p').onclick=()=>{ay--;rA()};$('ay-n').onclick=()=>{ay++;rA()};
 $('aa-d').value=ay+'-01-01';
@@ -349,7 +454,7 @@ $('aa-b').onclick=()=>{
   const n=$('aa-n').value.trim();if(!n){$('aa-n').focus();return}
   const v=$('aa-d').value||ay+'-01-01';
   S.annual.push({id:uid(),name:n,m:+v.slice(5,7),d:+v.slice(8,10),amount:parseFloat($('aa-a').value)||0,src:$('aa-s').value||S.main,paid:{}});
-  $('aa-n').value='';$('aa-a').value='';render();
+  $('aa-n').value='';$('aa-a').value='';closeSheet();render();
 };
 $('arows').addEventListener('change',e=>{
   const tr=e.target.closest('tr'),k=e.target.dataset.k;if(!tr||!k)return;
@@ -386,7 +491,7 @@ const dRow=(x,t)=>{
     <div class="dr" style="margin:0"><input type="date" data-k="date" value="${x.date||''}" title="Data del movimento">
       <input class="nm" data-k="note" placeholder="descrizione" value="${esc(x.note)}">
       <select data-k="dir"><option value="d"${deb?' selected':''}>Devo io</option><option value="c"${deb?'':' selected'}>Mi devono</option></select>
-      <select data-k="acct" title="${deb?'Conto su cui sono arrivati i soldi':'Conto da cui sono usciti i soldi'}">${accOpts(x.acct,'Conto: non specificato')}</select>
+      <select data-k="acct" title="${deb?'Conto su cui sono arrivati i soldi':'Conto da cui sono usciti i soldi'}">${accOpts(x.acct,'Nessun conto')}</select>
       <input type="number" step="0.01" min="0" data-k="total" value="${x.total}" style="width:90px">
       ${done?'<span class="chip okc">Saldato</span>':late?'<span class="chip late">Scaduto</span>':''}
       <button data-del title="Elimina" style="border:none;background:none;color:var(--mut)">✕</button></div>
@@ -415,7 +520,7 @@ function rD(){
   $('dwho').innerHTML=gs.map(g=>`<option value="${esc(g.name)}">`).join('');
   $('dlist').innerHTML=gs.map(g=>`<details class="dg" data-g="${esc(g.k)}" data-n="${esc(g.name)}"${gclosed.has(g.k)?'':' open'}><summary class="gh"><b>${esc(g.name)}</b>${g.c>0?` <span class="chip okc">Mi deve ${eur(g.c)}</span>`:''}${g.d>0?` <span class="chip late">Devo ${eur(g.d)}</span>`:''}${g.d>0&&g.c>0?` <span class="s">netto ${eur(g.c-g.d)}</span>`:''}${g.open?'':' <span class="chip okc">Saldato</span>'}<span class="s"> · ${g.rows.length} ${g.rows.length===1?'movimento':'movimenti'}</span><button data-ren title="Rinomina persona">✎</button></summary>
     ${g.rows.map(x=>dRow(x,t)).join('')}
-    <div class="dr" style="margin:0 0 4px 0"><input class="ga" type="number" step="0.01" min="0" placeholder="Importo €" style="width:110px"><input class="gn" placeholder="Descrizione" style="flex:1;min-width:120px"><select class="gd"><option value="c"${g.d>0&&g.c<=0?'':' selected'}>Mi deve</option><option value="d"${g.d>0&&g.c<=0?' selected':''}>Devo io</option></select><select class="gc" title="Conto">${accOpts('','Conto: non specificato')}</select><button data-gadd>＋ Movimento</button></div>
+    <div class="dr" style="margin:0 0 4px 0"><input class="ga" type="number" step="0.01" min="0" placeholder="Importo €" style="width:110px"><input class="gn" placeholder="Descrizione" style="flex:1;min-width:120px"><select class="gd"><option value="c"${g.d>0&&g.c<=0?'':' selected'}>Mi deve</option><option value="d"${g.d>0&&g.c<=0?' selected':''}>Devo io</option></select><select class="gc" title="Conto">${accOpts('','Nessun conto')}</select><button data-gadd>＋ Movimento</button></div>
   </details>`).join('')||'<p class="foot" style="padding:18px">Nessun debito o credito: aggiungine uno qui sopra</p>';
 }
 $('dlist').addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.g!==undefined){d.open?gclosed.delete(d.dataset.g):gclosed.add(d.dataset.g)}},true);
@@ -424,7 +529,7 @@ $('so-g').value=SO.g;$('so-r').value=SO.r;
 $('dd-b').onclick=()=>{
   const w=$('dd-w').value.trim();if(!w){$('dd-w').focus();return}
   S.debts.push({id:uid(),who:w,dir:$('dd-t').value,total:parseFloat($('dd-a').value)||0,due:$('dd-d').value,acct:$('dd-c').value,date:tdy(),note:'',pay:[]});
-  $('dd-w').value='';$('dd-a').value='';$('dd-d').value='';render();
+  $('dd-w').value='';$('dd-a').value='';$('dd-d').value='';closeSheet();render();
 };
 $('dlist').addEventListener('change',e=>{
   const c=e.target.closest('.dc'),k=e.target.dataset.k;if(!c||!k)return;
