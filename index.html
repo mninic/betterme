@@ -122,11 +122,19 @@ body.nm-open .bd,body.dm-open .bd{opacity:1;pointer-events:auto}
 .nmb label{display:flex;gap:8px;align-items:center;margin-top:6px;color:var(--tx)}
 .nmb input{width:20px;height:20px;accent-color:var(--ac)}
 /* ---- modello mensile ---- */
-.tpi{position:relative;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 44px 10px 10px;margin-bottom:8px}
+.tpi{background:var(--card);border:1px solid var(--bd);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.tpi>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;min-height:52px;color:var(--tx)}
+.tpi>summary::-webkit-details-marker{display:none}
+.tpi>summary::after{content:'›';color:var(--mut);font-size:22px;line-height:1;transition:transform .15s}
+.tpi[open]>summary::after{transform:rotate(90deg)}
+.tps{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.tps .ppn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tpm{white-space:nowrap}
+.tpb{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;padding:10px 12px 12px;border-top:1px solid var(--bd)}
 .tpi .f{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--mut);min-width:0}
 .tpi .f input,.tpi .f select{font-size:15px;color:var(--tx);width:100%}
 .tpi .f.n{flex:1 1 200px}.tpi .f.a{flex:0 0 110px}.tpi .f.d{flex:0 0 70px}.tpi .f.c{flex:0 0 170px}.tpi .f.k{flex:0 0 140px}
-.tpi .tpx{position:absolute;top:6px;right:6px;border:0;background:none;color:var(--mut)}
+.tpi .tpd{flex:1 1 100%;border:1px solid var(--bd);background:none;color:var(--bad,#c0392b);border-radius:8px;padding:10px;font-size:14px}
 .tpr{flex:1 1 100%;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;padding-top:8px;border-top:1px dashed var(--bd)}
 .tpr .f{flex:0 0 150px}
 /* ---- debiti e crediti (vista semplificata) ---- */
@@ -701,6 +709,7 @@ $('dmd').addEventListener('change',e=>{
 $('dmd').addEventListener('toggle',e=>{if(e.target.classList&&e.target.classList.contains('ddt'))DMDET=e.target.open},true);
 
 /* ---- Modello mensile ---- */
+const topen=new Set();
 function rT(){
   const nowK=tdy().slice(0,7);
   const fx=S.tpl.filter(t=>t.kind!=='r'),act=S.tpl.filter(t=>t.kind==='r'&&!(t.to&&t.to.slice(0,7)<nowK));
@@ -712,15 +721,19 @@ function rT(){
     const r=t.kind==='r',to=(t.to||'').slice(0,7),fr=(t.from||'').slice(0,7),end=r&&to&&to<nowK;
     let info='';
     if(r)info=end?'<span class="chip late">Terminata</span>':`<span class="s">${fr&&to?(mdiff(fr,to)+1)+' rate · ':''}${to?'restano '+Math.max(0,mdiff(nowK,to)+1)+' dal mese corrente':'senza data finale'}</span>`;
-    return `<div class="tpi" data-id="${t.id}">
+    const sub=r?(end?'Rateale · terminata':'Rateale'+(to?' · fino a '+mmyy(to):'')):'Ogni mese';
+    return `<details class="tpi" data-id="${t.id}"${topen.has(t.id)?' open':''}>
+      <summary><span class="tps"><b class="ppn">${esc(t.name)||'(senza nome)'}</b><span class="pps">${sub} · giorno ${t.day||1}${accName(t.src)?' · '+esc(accName(t.src)):''}</span></span><b class="tpm">${eur(+t.amount||0)}</b></summary>
+      <div class="tpb">
       <label class="f n"><small>Voce</small><input data-k="name" value="${esc(t.name)}"></label>
       <label class="f a"><small>Importo €</small><input type="number" step="0.01" min="0" inputmode="decimal" data-k="amount" value="${t.amount}"></label>
       <label class="f d"><small>Giorno</small><input type="number" min="1" max="31" inputmode="numeric" data-k="day" value="${t.day||1}"></label>
       <label class="f c"><small>Si paga da</small><select data-k="src">${accOpts(t.src)}</select></label>
       <label class="f k"><small>Tipo</small><select data-k="kind"><option value="f"${r?'':' selected'}>Ogni mese</option><option value="r"${r?' selected':''}>Rateale</option></select></label>
-      <button data-del class="tpx" title="Elimina dal modello">✕</button>
       ${r?`<div class="tpr"><label class="f"><small>Prima rata</small><input type="date" data-k="from" value="${t.from||''}"></label><label class="f"><small>Ultima rata</small><input type="date" data-k="to" value="${t.to||''}"></label>${info}</div>`:''}
-    </div>`}).join('')||'<p class="foot" style="padding:18px">Il modello è vuoto: tocca ＋ per aggiungere le voci che si ripetono, oppure importale dal mese aperto.</p>';
+      <button data-del class="tpd">Elimina dal modello</button>
+      </div>
+    </details>`}).join('')||'<p class="foot" style="padding:18px">Il modello è vuoto: tocca ＋ per aggiungere le voci che si ripetono, oppure importale dal mese aperto.</p>';
 }
 $('tl').addEventListener('change',e=>{
   const row=e.target.closest('.tpi'),k=e.target.dataset.k;if(!row||!k)return;
@@ -728,6 +741,7 @@ $('tl').addEventListener('change',e=>{
   t[k]=k==='amount'?(parseFloat(e.target.value)||0):k==='day'?Math.min(31,Math.max(1,parseInt(e.target.value)||1)):e.target.value;
   renderSoft();
 });
+$('tl').addEventListener('toggle',e=>{const d=e.target;if(d.classList&&d.classList.contains('tpi')){d.open?topen.add(d.dataset.id):topen.delete(d.dataset.id)}},true);
 $('tl').addEventListener('click',e=>{
   if(!e.target.closest('[data-del]'))return;
   const id=e.target.closest('.tpi').dataset.id,t=S.tpl.find(x=>x.id===id);
