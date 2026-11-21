@@ -94,6 +94,9 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .addm{grid-template-columns:130px minmax(0,1fr) 110px 150px 190px auto}
 .dad{display:grid;grid-template-columns:minmax(0,1.3fr) 150px 110px minmax(0,1.3fr) 150px 150px auto;gap:6px;align-items:end}
 .tpa{display:grid;grid-template-columns:minmax(0,1.4fr) 110px 120px 160px 190px auto;gap:6px;align-items:end}
+ input[type=date],input[type=month]{min-width:0;max-width:100%;box-sizing:border-box}
+.rr>*,.tpr .f,.tpi .f,.dgrid label,.fl{min-width:0}
+.rr input,.tpr input,.dgrid input,.fl input{width:100%}
 .rr{display:none;grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,200px));gap:8px}
 .rr.on{display:grid}
 .chip.rate{background:color-mix(in srgb,var(--ac) 14%,transparent);color:var(--ac)}
@@ -195,6 +198,9 @@ body.nm-open .bd,body.dm-open .bd{opacity:1;pointer-events:auto}
  .add>.rr,.tpa>.rr{order:8}
  .add>button,.dad>button,.tpa>button{order:9}
  .rr{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .rr input,.tpr input,.dgrid input,.fl input,.tpi .f input{display:block;-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;width:100%;text-align:left;min-height:40px}
+ input[type=date]::-webkit-date-and-time-value,input[type=month]::-webkit-date-and-time-value{text-align:left;min-width:0}
+ .tpr .f{min-width:0;flex:1 1 calc(50% - 4px);max-width:calc(50% - 4px)}
  .fl input,.fl select,.tpi .f input,.tpi .f select,.dgrid input,.dgrid select{font-size:16px}
 
  /* ---- tabelle -> schede compatte ---- */
@@ -424,6 +430,10 @@ const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){};sched
 const $=id=>document.getElementById(id);
 const monthLabel=k=>{const[y,m]=k.split('-');const s=new Date(+y,m-1,1).toLocaleDateString('it-IT',{month:'long',year:'numeric'});return s[0].toUpperCase()+s.slice(1)};
 const items=()=>S.months[S.cur];
+let pendR=false;
+const pickerOn=()=>{const a=document.activeElement;return !!(a&&a.tagName==='INPUT'&&/^(date|month|time)$/.test(a.type))};
+function renderSoft(){if(pickerOn()){pendR=true;save();return}render()}
+document.addEventListener('focusout',()=>{if(!pendR)return;setTimeout(()=>{if(pickerOn())return;pendR=false;render()},120)});
 
 function render(){
   fillSel();
@@ -471,7 +481,7 @@ $('rows').addEventListener('change',e=>{
   const it=items().find(x=>x.id===tr.dataset.id);if(!it)return;
   it[k]=k==='paid'?e.target.checked:k==='amount'?(parseFloat(e.target.value)||0):e.target.value;
   if(k==='date'&&!e.target.value)it.date=S.cur+'-01';
-  render();
+  renderSoft();
 });
 $('rows').addEventListener('click',e=>{
   if(!e.target.closest('[data-del]'))return;
@@ -584,7 +594,7 @@ $('arows').addEventListener('change',e=>{
   if(k==='paid'){a.paid=a.paid||{};a.paid[ay]=e.target.checked}
   else if(k==='date'){const v=e.target.value;if(v){a.m=+v.slice(5,7);a.d=+v.slice(8,10)}}
   else a[k]=k==='amount'?(parseFloat(e.target.value)||0):e.target.value;
-  render();
+  renderSoft();
 });
 $('arows').addEventListener('click',e=>{
   if(!e.target.closest('[data-del]'))return;
@@ -686,7 +696,7 @@ $('dmd').addEventListener('click',e=>{
 $('dmd').addEventListener('change',e=>{
   const k=e.target.dataset.k;if(!k)return;
   const x=S.debts.find(y=>y.id===DM);if(!x)return;
-  x[k]=k==='total'?(parseFloat(e.target.value)||0):e.target.value;render();
+  x[k]=k==='total'?(parseFloat(e.target.value)||0):e.target.value;renderSoft();
 });
 $('dmd').addEventListener('toggle',e=>{if(e.target.classList&&e.target.classList.contains('ddt'))DMDET=e.target.open},true);
 
@@ -716,7 +726,7 @@ $('tl').addEventListener('change',e=>{
   const row=e.target.closest('.tpi'),k=e.target.dataset.k;if(!row||!k)return;
   const t=S.tpl.find(x=>x.id===row.dataset.id);if(!t)return;
   t[k]=k==='amount'?(parseFloat(e.target.value)||0):k==='day'?Math.min(31,Math.max(1,parseInt(e.target.value)||1)):e.target.value;
-  render();
+  renderSoft();
 });
 $('tl').addEventListener('click',e=>{
   if(!e.target.closest('[data-del]'))return;
@@ -822,7 +832,7 @@ $('cl').addEventListener('change',e=>{
   if(e.target.dataset.main!==undefined)S.main=a.id;
   else if(e.target.dataset.k==='name')a.name=e.target.value.trim()||a.name;
   else if(e.target.dataset.k==='type')a.type=e.target.value;
-  render();
+  renderSoft();
 });
 $('cl').addEventListener('click',e=>{
   if(!e.target.closest('[data-del]'))return;
@@ -863,7 +873,7 @@ async function syncNow(retry){
     if(useRemote){
       const cur=S.cur;S=remote;norm();
       S.cur=S.months[cur]?cur:Object.keys(S.months).sort().pop();
-      C.sha=sha;C.snap=pk();svC();render();
+      C.sha=sha;C.snap=pk();svC();renderSoft();
     }else if(!remote||dirty||sha!==C.sha){
       const{cur,...data}=S;
       const body={message:'Prospetto spese '+new Date().toISOString(),content:b64e(JSON.stringify({app:'prospetto-spese',saved:new Date().toISOString(),data},null,1)),branch:C.br};
